@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Engine</title>
+</head>
+<body style="background: black; color: white; margin: 0;">
+    <div id="wrapper">
+        <div id="canvasWrapper">
+            <canvas id="canvas" style="display: block;"></canvas>
+        </div>
+    </div>
+</body>
+<script type="module">
+    import { Engine } from './src/Engine.js';
+    const engine = new Engine();
+    window.engine = engine;
+</script>
+</html>
