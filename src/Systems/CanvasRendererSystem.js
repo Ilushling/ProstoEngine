@@ -10,6 +10,7 @@ export class CanvasRendererSystem extends System {
         super();
         this.world = world;
         this.entities = this.world.entityManager._entities;
+        this.canvasEntity = this.world.createEntity('Canvas').addComponent(Canvas);
     }
 
     init() {

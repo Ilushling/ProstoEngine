@@ -34,9 +34,7 @@ export class InputSystem extends System {
                     }
                 }
 
-                if (this.world.inputManager.mouse.leftButton.pressed && 
-                    [NodeType.FREE, NodeType.WALL].includes(nodeType.id)
-                ) {
+                if (this.world.inputManager.mouse.leftButton.pressed && [NodeType.FREE, NodeType.WALL].includes(nodeType.id)) {
                     nodeType.id = this.nodeTypeMouseMode;
                 }
             }

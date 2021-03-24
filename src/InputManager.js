@@ -1,12 +1,7 @@
-import { Canvas } from './Components/Canvas.js';
-
 export class InputManager {
     constructor(world) {
         this.world = world;
-        // @TODO
-        this.canvasEntity = this.world.createEntity('Canvas').addComponent(Canvas);
-        this.canvasComponent = this.canvasEntity.getComponent(Canvas);
-        this.canvas = this.canvasComponent.canvas;
+        this.context = document;
 
         this.mouse = {
             x: 0,
@@ -29,9 +24,9 @@ export class InputManager {
 
         this.isMouseInterpolate = true;
 
-        this.canvas.onmouseup = event => this.onMouseUp(event);
-        this.canvas.onmousedown = event => this.onMouseDown(event);
-        this.canvas.onmousemove = event => this.onMouseMove(event);
+        this.context.onmouseup   = event => this.onMouseUp(event);
+        this.context.onmousedown = event => this.onMouseDown(event);
+        this.context.onmousemove = event => this.onMouseMove(event);
     }
 
     onMouseUp(event) {
@@ -51,8 +46,7 @@ export class InputManager {
     }
 
     getMousePosition(event) {
-        const rect = this.canvas.getBoundingClientRect();
-        return { x: event.clientX - rect.left, y: event.clientY - rect.top };
+        return { x: event.clientX, y: event.clientY };
     }
 
     update() {

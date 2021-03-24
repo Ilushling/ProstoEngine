@@ -21,6 +21,7 @@ export class GridGeneratorSystem extends System {
     init() {
         const boxSize = 50;
         const margin = 1;
+        const baseWeight = 0.5;
         const nodesMatrix = [];
 
         const step = boxSize + margin;
@@ -81,37 +82,37 @@ export class GridGeneratorSystem extends System {
                 const newEdges = [];
 
                 if (up) {
-                    const upEdge = new Edge({ node: up, weight: 1 });
+                    const upEdge = new Edge({ node: up, weight: baseWeight });
                     newEdges.push(upEdge);
                 }
                 if (left) {
-                    const leftEdge = new Edge({ node: left, weight: 1 });
+                    const leftEdge = new Edge({ node: left, weight: baseWeight });
                     newEdges.push(leftEdge);
                 }
                 if (down) {
-                    const downEdge = new Edge({ node: down, weight: 1 });
+                    const downEdge = new Edge({ node: down, weight: baseWeight });
                     newEdges.push(downEdge);
                 }
                 if (right) {
-                    const rightEdge = new Edge({ node: right, weight: 1 });
+                    const rightEdge = new Edge({ node: right, weight: baseWeight });
                     newEdges.push(rightEdge);
                 }
 
                 // Diagonals
                 if (upLeft) {
-                    const upLeftEdge = new Edge({ node: upLeft, weight: 1.4 });
+                    const upLeftEdge = new Edge({ node: upLeft, weight: baseWeight * 1.4 });
                     newEdges.push(upLeftEdge);
                 }
                 if (downLeft) {
-                    const downLeftEdge = new Edge({ node: downLeft, weight: 1.4 });
+                    const downLeftEdge = new Edge({ node: downLeft, weight: baseWeight * 1.4 });
                     newEdges.push(downLeftEdge);
                 }
                 if (upRight) {
-                    const upRightEdge = new Edge({ node: upRight, weight: 1.4 });
+                    const upRightEdge = new Edge({ node: upRight, weight: baseWeight * 1.4 });
                     newEdges.push(upRightEdge);
                 }
                 if (downRight) {
-                    const downRightEdge = new Edge({ node: downRight, weight: 1.4 });
+                    const downRightEdge = new Edge({ node: downRight, weight: baseWeight * 1.4 });
                     newEdges.push(downRightEdge);
                 }
 

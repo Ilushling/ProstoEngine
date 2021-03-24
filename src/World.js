@@ -10,9 +10,7 @@ export class World {
         this.componentManager = new ComponentManager(this);
         this.entityManager = new EntityManager(this);
         this.systemManager = new SystemManager(this);
-        setTimeout(() => {
-            this.inputManager = new InputManager(this);
-        }, 100);
+        this.inputManager = new InputManager(this);
 
         this.enabled = true;
     }

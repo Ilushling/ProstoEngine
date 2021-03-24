@@ -10,9 +10,8 @@ export class PathFinderSystem extends System {
         this.world = world;
         this.entities = this.world.entityManager._entities;
 
-        // @TODO
-        this.boxSize = 50;
-        this.margin = 1;
+        this.searchTickSteps = 5;
+        this.buildPathTickSteps = 1;
     }
 
     init() {
@@ -23,7 +22,8 @@ export class PathFinderSystem extends System {
 
             const nodeType = entity.getComponent(NodeType);
             if (nodeType.id == NodeType.START) {
-                this.exploringEntities = [entity];
+                this.startNode = entity;
+                this.exploringEntities = [this.startNode];
             }
             if (nodeType.id == NodeType.END) {
                 this.endNode = entity;
@@ -33,90 +33,109 @@ export class PathFinderSystem extends System {
     }
 
     execute() {
-        if (this.finded) {
-            this.buildPath(this.endNode);
+        if (this.isFinded) {
+            for (let i = 0; i < this.buildPathTickSteps; i++) {
+                if (!this.lastDiscoveredPathEntity) {
+                    break;
+                }
+                this.lastDiscoveredPathEntity = this.buildPathTick(this.lastDiscoveredPathEntity);
+            }
             return;
         }
+
         if (Array.isArray(this.exploringEntities) && this.exploringEntities.length) {
-            this.exploringEntities.sort((aEntity, bEntity) => {
-                if (!aEntity.hasComponent(AStarPathFinder) || !bEntity.hasComponent(AStarPathFinder)) {
-                    return;
+            for (let i = 0; i < this.searchTickSteps; i++) {
+                if (this.isFinded) {
+                    break;
                 }
 
-                const aEntityAStarPathFinder = aEntity.getComponent(AStarPathFinder);
-                const bEntityAStarPathFinder = bEntity.getComponent(AStarPathFinder);
-
-                const aEntityCost = aEntityAStarPathFinder.cost + aEntityAStarPathFinder.heuristic; // f = g + h
-                const bEntityCost = bEntityAStarPathFinder.cost + bEntityAStarPathFinder.heuristic; // f = g + h
-
-                return aEntityCost < bEntityCost;
-            });
-
-            const currentEntity = this.exploringEntities.pop();
-            if (!currentEntity.hasComponent(NodeType) || !currentEntity.hasComponent(Edges) || !currentEntity.hasComponent(AStarPathFinder)) {
-                return;
+                this.isFinded = this.searchTick(this.endNodePosition);
+                if (this.isFinded) {
+                    this.lastDiscoveredPathEntity = this.endNode;
+                }
             }
-
-            const currentNodeType = currentEntity.getComponent(NodeType);
-            const currentEdgesComponent = currentEntity.getComponent(Edges);
-            const currentAStarPathFinder = currentEntity.getComponent(AStarPathFinder);
-
-            if ([NodeType.EXPLORED].includes(currentNodeType.id)) {
-                return;
-            }
-
-            currentEdgesComponent.edges.forEach(edge => {
-                const edgeEntity = edge.node;
-                if (!edgeEntity.hasComponent(NodeType) || !edgeEntity.hasComponent(Edges) || !edgeEntity.hasComponent(AStarPathFinder) || !edgeEntity.hasComponent(Position)) {
-                    return;
-                }
-
-                const nodeType = edgeEntity.getComponent(NodeType);
-                const aStarPathFinder = edgeEntity.getComponent(AStarPathFinder);
-                const position = edgeEntity.getComponent(Position);
-
-                if (![NodeType.FREE, NodeType.EXPLORING, NodeType.END].includes(nodeType.id)) {
-                    return;
-                }
-
-                const newCost = currentAStarPathFinder.cost + edge.weight; // Distance from Start (g)
-                const newHeuristic = newCost + this.getDistance(position, this.endNodePosition); // Heuristic distance (h)
-                //console.log(newCost, newHeuristic);
-
-                if (!aStarPathFinder.cost || !aStarPathFinder.heuristic) {
-                    if (nodeType.id == NodeType.END) {
-                        this.finded = true;
-                        console.log('endNode finded');
-                    } else {
-                        nodeType.id = NodeType.EXPLORING;
-                    }
-                    aStarPathFinder.cost = newCost;
-                    aStarPathFinder.heuristic = newHeuristic;
-                    aStarPathFinder.previous = currentEntity;
-                    this.exploringEntities.push(edgeEntity);
-                }
-                if (newCost < aStarPathFinder.cost && newHeuristic < aStarPathFinder.heuristic) {
-                    if (nodeType.id == NodeType.END) {
-                        this.finded = true;
-                    }
-                    console.log('Finded better path edge');
-                    // Finded better path edge
-                    aStarPathFinder.cost = newCost;
-                    aStarPathFinder.heuristic = newHeuristic;
-                    aStarPathFinder.previous = currentEntity; // Replace to better step
-                    this.exploringEntities.push(edgeEntity);
-                }
-            });
-
-            if (currentNodeType.id == NodeType.END) {
-                this.finded = true;
-                console.log('endNode finded');
-            } else if (currentNodeType.id != NodeType.START) {
-                currentNodeType.id = NodeType.EXPLORED;
-            }
-        } else {
-            console.log('Entity is not found');
         }
+    }
+
+    searchTick(targetPosition) {
+        let isFinded = false;
+
+        this.exploringEntities.sort((aEntity, bEntity) => {
+            if (!aEntity.hasComponent(AStarPathFinder) || !bEntity.hasComponent(AStarPathFinder)) {
+                return;
+            }
+
+            const aEntityAStarPathFinder = aEntity.getComponent(AStarPathFinder);
+            const bEntityAStarPathFinder = bEntity.getComponent(AStarPathFinder);
+
+            const aEntityCost = aEntityAStarPathFinder.cost + aEntityAStarPathFinder.heuristic; // f = g + h
+            const bEntityCost = bEntityAStarPathFinder.cost + bEntityAStarPathFinder.heuristic; // f = g + h
+
+            return aEntityCost - bEntityCost;
+        });
+
+        const currentEntity = this.exploringEntities.shift();
+        if (!currentEntity || !currentEntity.hasComponent(NodeType) || !currentEntity.hasComponent(Edges) || !currentEntity.hasComponent(AStarPathFinder)) {
+            return;
+        }
+
+        const currentNodeType = currentEntity.getComponent(NodeType);
+        const currentEdgesComponent = currentEntity.getComponent(Edges);
+        const currentAStarPathFinder = currentEntity.getComponent(AStarPathFinder);
+
+        if ([NodeType.EXPLORED].includes(currentNodeType.id)) {
+            return;
+        }
+
+        currentEdgesComponent.edges.forEach(edge => {
+            const edgeEntity = edge.node;
+            if (!edgeEntity.hasComponent(NodeType) || !edgeEntity.hasComponent(Edges) || !edgeEntity.hasComponent(AStarPathFinder) || !edgeEntity.hasComponent(Position)) {
+                return;
+            }
+
+            const nodeType = edgeEntity.getComponent(NodeType);
+            const aStarPathFinder = edgeEntity.getComponent(AStarPathFinder);
+            const position = edgeEntity.getComponent(Position);
+
+            if (![NodeType.FREE, NodeType.EXPLORING, NodeType.END].includes(nodeType.id)) {
+                return;
+            }
+
+            const newCost = currentAStarPathFinder.cost + edge.weight; // Distance from Start (g)
+            const newHeuristic = newCost + PathFinderSystem.getDistance(position, targetPosition); // Heuristic distance (h)
+
+            if (!aStarPathFinder.cost || !aStarPathFinder.heuristic) {
+                if (nodeType.id == NodeType.END) {
+                    isFinded = true;
+                } else {
+                    nodeType.id = NodeType.EXPLORING;
+                }
+                aStarPathFinder.cost = newCost;
+                aStarPathFinder.heuristic = newHeuristic;
+                aStarPathFinder.previous = currentEntity;
+                this.exploringEntities.push(edgeEntity);
+            }
+
+            if (newCost < aStarPathFinder.cost && newHeuristic < aStarPathFinder.heuristic) {
+                // Finded better path edge
+                if (nodeType.id == NodeType.END) {
+                    isFinded = true;
+                }
+
+                aStarPathFinder.cost = newCost;
+                aStarPathFinder.heuristic = newHeuristic;
+                aStarPathFinder.previous = currentEntity; // Replace to better step
+                this.exploringEntities.push(edgeEntity);
+            }
+        });
+
+        if (currentNodeType.id == NodeType.END) {
+            isFinded = true;
+        } else if (currentNodeType.id != NodeType.START) {
+            currentNodeType.id = NodeType.EXPLORED;
+        }
+
+        return isFinded;
     }
 
     /**
@@ -127,26 +146,28 @@ export class PathFinderSystem extends System {
      * 
      * @param {object} startPosition 
      * @param {object} endPosition 
-     * @returns {number}
+     * @returns {number} distanceByNodes
      */
-    getDistance(startPosition, endPosition) {
+    static getDistance(startPosition, endPosition) {
         // @TODO test perfomance
+        const boxSize = 50;
+        const margin = 1;
         // Manhattan distance
         const pixelDistance = Math.sqrt((endPosition.x - startPosition.x) ** 2 + (endPosition.y - startPosition.y) ** 2);
         // ** .5 is analog Math.sqrt
         //const pixelDistance = ((endPosition.x - startPosition.x) ** 2 + (endPosition.y - startPosition.y) ** 2) ** .5;
-        const nodeDistance = pixelDistance / this.boxSize;
+        const distanceByNodes = pixelDistance / (boxSize + margin);
         // Distance from start to end + all margins between start to end
-        return Math.floor(nodeDistance + (this.margin * nodeDistance));
+        return distanceByNodes;
     }
 
-    buildPath(entity) {
+    buildPathTick(entity) {
         if (!entity.hasComponent(AStarPathFinder)) {
             return;
         }
 
         const aStarPathFinder = entity.getComponent(AStarPathFinder);
-        while (aStarPathFinder.previous) {
+        if (aStarPathFinder.previous) {
             if (!aStarPathFinder.previous.hasComponent(NodeType)) {
                 return;
             }
@@ -157,7 +178,7 @@ export class PathFinderSystem extends System {
             }
             nodeType.id = NodeType.PATH;
 
-            return this.buildPath(aStarPathFinder.previous);
+            return aStarPathFinder.previous;
         }
     }
 }

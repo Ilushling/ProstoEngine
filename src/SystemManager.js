@@ -11,8 +11,6 @@ export class SystemManager {
 
         if (typeof system.init == 'function') {
             system.init();
-        } else {
-            console.log(2);
         }
 
         this._systems.push(system);
