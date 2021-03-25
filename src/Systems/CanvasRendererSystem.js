@@ -38,7 +38,7 @@ export class CanvasRendererSystem extends System {
     }
 
     clearCanvas() {
-        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+        //this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
     }
 
     onResizeCanvas() {
@@ -46,6 +46,7 @@ export class CanvasRendererSystem extends System {
             this.canvas.width = window.innerWidth;
             this.canvas.height = window.innerHeight;
         }
+        this.reDraw = true;
     }
 
     renderEntites() {
@@ -66,6 +67,8 @@ export class CanvasRendererSystem extends System {
                     break;
             }
         });
+
+        this.reDraw = false;
     }
 
     drawRect(x, y, width, height, { shape }) {
@@ -74,7 +77,9 @@ export class CanvasRendererSystem extends System {
             shape.path2D.rect(x, y, width, height);
         }
 
-        this.ctx.fillStyle = shape.color;
-        this.ctx.fill(shape.path2D);
+        if (shape.color != shape.previous.color || this.reDraw) {
+            this.ctx.fillStyle = shape.color;
+            this.ctx.fill(shape.path2D);
+        }
     }
 }

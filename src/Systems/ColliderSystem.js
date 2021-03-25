@@ -11,6 +11,8 @@ export class ColliderSystem extends System {
         super();
         this.world = world;
         this.entities = this.world.entityManager._entities;
+        this.entityManager = this.world.entityManager;
+        this.inputManager = this.world.inputManager;
     }
 
     init() {
@@ -20,24 +22,29 @@ export class ColliderSystem extends System {
             this.workers.push(new Worker('src/Systems/ColliderSystemWorker.js', { type: 'module' }));
             const worker = this.workers[i];
 
+            const columns = 2;
             worker.onmessage = event => {
-                const workerEntities = event.data;
-                workerEntities.forEach(workerEntity => {
-                    const entity = this.entities.find(_entity => _entity.id == workerEntity.entityId);
+                const entitiesBuffer = new Uint16Array(event.data);
+                for (let j = 0, length = entitiesBuffer.length; j < length; j += columns) {
+                    const entityOffset = j;
+                    const entityId = entitiesBuffer[entityOffset];
+                    const isCollide = entitiesBuffer[entityOffset + 1];
+
+                    const entity = this.entities[entityId];
                     if (!entity || !entity.hasComponent(Collider)) {
                         return;
                     }
     
                     const collider = entity.getComponent(Collider);
-                    collider.isMouseCollided = workerEntity.isCollide;
-                });
+                    collider.isMouseCollided = isCollide;
+                }
             };
         }
     }
 
     execute() {
         if (!this.canvas) {
-            this.canvasEntity = this.world.entityManager.getEntityByName('Canvas');
+            this.canvasEntity = this.entityManager.getEntityByName('Canvas');
             if (this.canvasEntity && this.canvasEntity.hasComponent(Canvas)) {
                 this.canvasComponent = this.canvasEntity.getComponent(Canvas);
                 this.canvas = this.canvasComponent.canvas;
@@ -49,39 +56,46 @@ export class ColliderSystem extends System {
 
         const workersCount = this.workers.length;
         if (workersCount) {
+            const entitiesToCheckCollide = [];
+            this.entities.forEach(entity => {
+                if (!entity.hasComponent(Collider) || !entity.hasComponent(Shape) || !entity.hasComponent(Position) || !entity.hasComponent(Scale)) {
+                    return;
+                }
+
+                const shape = entity.getComponent(Shape);
+                const position = entity.getComponent(Position);
+                const scale = entity.getComponent(Scale);
+
+                if (shape.primitive != ShapeType.BOX) {
+                    return;
+                }
+
+                entitiesToCheckCollide.push(...[
+                    entity.id,
+                    position.x, 
+                    position.y, 
+                    scale.x, 
+                    scale.y
+                ]);
+            });
+
             const entitiesCount = this.entities.length;
+            const columns = 5;
             for (let i = 0; i < workersCount; i++) {
                 const worker = this.workers[i];
                 if (!worker) {
                     return;
                 }
-                const start = entitiesCount / workersCount * i;
-                const limit = start + entitiesCount / workersCount;
+                const start = (entitiesCount / workersCount * i) * columns;
+                const limit = (start + entitiesCount / workersCount) * columns;
 
-                const entitiesToCheckCollide = this.entities.map(entity => {
-                    if (!entity.hasComponent(Collider) || !entity.hasComponent(Shape) || !entity.hasComponent(Position) || !entity.hasComponent(Scale)) {
-                        return;
-                    }
-
-                    const shape = entity.getComponent(Shape);
-                    const position = entity.getComponent(Position);
-                    const scale = entity.getComponent(Scale);
-
-                    if (shape.primitive != ShapeType.BOX) {
-                        return;
-                    }
-
-                    return {
-                        entityId: entity.id,
-                        rect: { x: position.x, y: position.y, width: scale.x, height: scale.y }
-                    };
-                }).filter(entity => entity);
+                const entitiesBuffer = new Uint16Array(entitiesToCheckCollide.slice(start, limit)).buffer;
 
                 worker.postMessage({
-                    entities: entitiesToCheckCollide.slice(start, limit),
-                    point: this.world.inputManager.mouse,
-                    isInterpolate: this.world.inputManager.isMouseInterpolate
-                });
+                    point: this.inputManager.mouse,
+                    isInterpolate: this.inputManager.isMouseInterpolate,
+                    entitiesBuffer,
+                }, [entitiesBuffer]);
             }
             return;
         }
@@ -96,24 +110,24 @@ export class ColliderSystem extends System {
             const position = entity.getComponent(Position);
             const scale = entity.getComponent(Scale);
 
-            if (shape.path2D && this.world.inputManager) {
+            if (shape.path2D && this.inputManager) {
                 if (shape.primitive == ShapeType.BOX) {
                     if (this.worker) {
                         this.worker.postMessage({
                             entityId: i,
                             rect: { x: position.x, y: position.y, width: scale.x, height: scale.y },
-                            point: this.world.inputManager.mouse,
-                            isInterpolate: this.world.inputManager.isMouseInterpolate
+                            point: this.inputManager.mouse,
+                            isInterpolate: this.inputManager.isMouseInterpolate
                         });
                         return;
                     }
                     collider.isMouseCollided = ColliderSystem.isPointInRect(
                         { x: position.x, y: position.y, width: scale.x, height: scale.y }, 
-                        this.world.inputManager.mouse, 
-                        this.world.inputManager.isMouseInterpolate
+                        this.inputManager.mouse, 
+                        this.inputManager.isMouseInterpolate
                     );
                 } else {
-                    collider.isMouseCollided = this.isPointInPath(shape.path2D, this.world.inputManager.mouse, this.world.inputManager.isMouseInterpolate);
+                    collider.isMouseCollided = this.isPointInPath(shape.path2D, this.inputManager.mouse, this.inputManager.isMouseInterpolate);
                 }
             }
         });
@@ -213,5 +227,25 @@ export class ColliderSystem extends System {
 
     static isRectContainsPoint(rect, point) {
         return rect.x <= point.x && point.x <= rect.x + rect.width && rect.y <= point.y && point.y <= rect.y + rect.height;
+    }
+
+    static stringToUint(string) {
+        const str = btoa(unescape(encodeURIComponent(string)))
+        const uintArray = []
+        const len = str.length
+      
+        let i = -1
+      
+        while (++i < len) {
+          uintArray[i] = str.charCodeAt(i)
+        }
+      
+        return new Uint8Array(uintArray);
+    }
+    
+    static uintToString(uintArray) {
+        var encodedString = String.fromCharCode.apply(null, uintArray),
+            decodedString = decodeURIComponent(escape(atob(encodedString)));
+        return decodedString;
     }
 }

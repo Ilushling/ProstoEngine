@@ -21,7 +21,7 @@ export class GridGeneratorSystem extends System {
     init() {
         const boxSize = 50;
         const margin = 1;
-        const baseWeight = 0.5;
+        const baseWeight = 1;
         const nodesMatrix = [];
 
         const step = boxSize + margin;

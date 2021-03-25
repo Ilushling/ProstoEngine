@@ -23,34 +23,36 @@ export class ShapeSystem extends System {
             const shape = entity.getComponent(Shape);
             const hover = entity.getComponent(Hover);
 
+            shape.previous.color = shape.color;
+
             if (hover.isMouseHover) {
-                return shape.color = 'lightgray';
+                return shape.color = '#d3d3d3';
             }
 
             switch (nodeType.id) {
                 case NodeType.FREE:
-                    shape.color = 'rgb(255, 255, 255)';
+                    shape.color = '#ffffff';
                     break;
                 case NodeType.WALL:
-                    shape.color = 'rgb(70, 70, 70)';
+                    shape.color = '#464646';
                     break;
                 case NodeType.START:
-                    shape.color = 'rgb(0, 255, 0)';
+                    shape.color = '#faf064';
                     break;
                 case NodeType.END:
-                    shape.color = 'rgb(255, 0, 0)';
+                    shape.color = '#ff0000';
                     break;
                 case NodeType.EXPLORING:
-                    shape.color = 'rgb(250, 240, 100)';
+                    shape.color = '#faf064';
                     break;
                 case NodeType.EXPLORED:
-                    shape.color = 'rgb(160, 230, 255)';
+                    shape.color = '#a0e6ff';
                     break;
                 case NodeType.PATH:
-                    shape.color = 'rgb(40, 180, 250)';
+                    shape.color = '#28b4fa';
                     break;
                 default:
-                    shape.color = 'rgb(255, 255, 255)';
+                    shape.color = '#ffffff';
                     break;
             }
         });

@@ -12,6 +12,7 @@ export class PathFinderSystem extends System {
 
         this.searchTickSteps = 5;
         this.buildPathTickSteps = 1;
+        this.baseWeight = 1;
     }
 
     init() {
@@ -101,30 +102,21 @@ export class PathFinderSystem extends System {
                 return;
             }
 
-            const newCost = currentAStarPathFinder.cost + edge.weight; // Distance from Start (g)
-            const newHeuristic = newCost + PathFinderSystem.getDistance(position, targetPosition); // Heuristic distance (h)
+            const newCost = currentAStarPathFinder.cost + (this.baseWeight * edge.weight); // Distance between current node and the start (g)
+            const newHeuristic = PathFinderSystem.getDistance(position, targetPosition); // Heuristic - distance from the current node to the end node (h)
+            const totalCost = newCost + newHeuristic; // Total cost of the node (f)
 
-            if (!aStarPathFinder.cost || !aStarPathFinder.heuristic) {
+            if (!aStarPathFinder.cost || !aStarPathFinder.heuristic || totalCost < aStarPathFinder.totalCost) {
                 if (nodeType.id == NodeType.END) {
                     isFinded = true;
                 } else {
                     nodeType.id = NodeType.EXPLORING;
                 }
+
                 aStarPathFinder.cost = newCost;
                 aStarPathFinder.heuristic = newHeuristic;
+                aStarPathFinder.totalCost = totalCost;
                 aStarPathFinder.previous = currentEntity;
-                this.exploringEntities.push(edgeEntity);
-            }
-
-            if (newCost < aStarPathFinder.cost && newHeuristic < aStarPathFinder.heuristic) {
-                // Finded better path edge
-                if (nodeType.id == NodeType.END) {
-                    isFinded = true;
-                }
-
-                aStarPathFinder.cost = newCost;
-                aStarPathFinder.heuristic = newHeuristic;
-                aStarPathFinder.previous = currentEntity; // Replace to better step
                 this.exploringEntities.push(edgeEntity);
             }
         });
