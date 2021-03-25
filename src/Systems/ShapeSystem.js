@@ -37,7 +37,7 @@ export class ShapeSystem extends System {
                     shape.color = '#464646';
                     break;
                 case NodeType.START:
-                    shape.color = '#faf064';
+                    shape.color = '#00ff00';
                     break;
                 case NodeType.END:
                     shape.color = '#ff0000';
