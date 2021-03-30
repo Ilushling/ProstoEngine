@@ -13,7 +13,7 @@ export class GridGeneratorSystem extends System {
     constructor(world) {
         super();
         this.world = world;
-        this.entities = this.world.entityManager._entities;
+        this._entities = this.world.entityManager._entities;
         this.width = typeof window !== 'undefined' ? window.innerWidth : 500;
         this.height = typeof window !== 'undefined' ? window.innerHeight : 500;
     }
@@ -43,18 +43,26 @@ export class GridGeneratorSystem extends System {
 
                 const position = entity.getComponent(Position);
                 const scale = entity.getComponent(Scale);
+                const shape = entity.getComponent(Shape);
 
                 position.x = (boxSize + margin) * x;
                 position.y = (boxSize + margin) * y;
                 scale.x = boxSize;
                 scale.y = boxSize;
 
+                shape.rect = {
+                    x: position.x,
+                    y: position.y,
+                    width: scale.x,
+                    height: scale.y,
+                };
+
                 nodesMatrix[y][x] = entity;
             }
         }
 
         // Start End Nodes
-        const entitiesCount = this.entities.length;
+        const entitiesCount = this._entities.length;
         const startEntityId = GridGeneratorSystem.getRandomInteger(0, entitiesCount);
         let endEntityId = GridGeneratorSystem.getRandomInteger(0, entitiesCount);
         while (endEntityId == startEntityId) {

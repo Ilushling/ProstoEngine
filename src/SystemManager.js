@@ -34,6 +34,10 @@ export class SystemManager {
         return this;
     }
 
+    hasSystem(System) {
+        return this._systems.includes(System);
+    }
+
     getSystem(System) {
         return this._systems.find(system => system instanceof System);
     }
@@ -43,8 +47,7 @@ export class SystemManager {
     }
 
     removeSystem(System) {
-        const index = this._systems.indexOf(System);
-        if (!~index) {
+        if (!this.hasSystem(System)) {
             return;
         }
     
@@ -63,5 +66,9 @@ export class SystemManager {
 
     execute(deltaTime) {
         this._executeSystems.forEach(system => this.executeSystem(system, deltaTime));
+    }
+
+    stats() {
+        return;
     }
 }

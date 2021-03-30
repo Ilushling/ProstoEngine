@@ -3,7 +3,7 @@ addEventListener('message', event => {
     const entitiesBuffer = new Uint16Array(data.entitiesBuffer);
     const point = data.point;
     const isInterpolate = data.isInterpolate;
-    const columns = 5;
+    const columns = 5; // Columns from ColliderSystem
     
     const entityResult = [];
     for (let i = 0, length = entitiesBuffer.byteLength / 2 / columns; i < length; i++) {

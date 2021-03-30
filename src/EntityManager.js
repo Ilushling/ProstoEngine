@@ -1,9 +1,11 @@
 import { Entity } from './Entity.js';
+import { EventDispatcher } from './EventDispatcher.js';
 
 export class EntityManager {
     constructor(world) {
         this.world = world;
         this.componentManager = world.componentManager;
+        this.eventDispatcher = new EventDispatcher();
 
         this._entities = [];
         this._entitiesByName = [];
@@ -18,6 +20,7 @@ export class EntityManager {
             throw new Error(`Entity name ${name} already exists`);
         }
 
+        entity.name = name;
         this._entitiesByName[name] = entity;
         this._entities.push(entity);
 
@@ -74,5 +77,9 @@ export class EntityManager {
 
     getEntityByName(name) {
         return this._entitiesByName[name];
+    }
+
+    stats() {
+        return;
     }
 }

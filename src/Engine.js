@@ -9,12 +9,14 @@ import { Hover } from './Components/Hover.js';
 import { Edge } from './Components/Edge.js';
 import { Edges } from './Components/Edges.js';
 import { AStarPathFinder } from './Components/AStarPathFinder.js';
+import { UI } from './Components/UI.js';
 import { GridGeneratorSystem } from './Systems/GridGeneratorSystem.js';
 import { CanvasRendererSystem } from './Systems/CanvasRendererSystem.js';
 import { ColliderSystem } from './Systems/ColliderSystem.js';
 import { ShapeSystem } from './Systems/ShapeSystem.js';
 import { InputSystem } from './Systems/InputSystem.js';
 import { PathFinderSystem } from './Systems/PathFinderSystem.js';
+import { UISystem } from './Systems/UISystem.js';
 
 export class Engine {
     constructor() {
@@ -31,12 +33,14 @@ export class Engine {
             .registerComponent(Edge)
             .registerComponent(Edges)
             .registerComponent(AStarPathFinder)
+            .registerComponent(UI)
             .registerSystem(GridGeneratorSystem)
             .registerSystem(CanvasRendererSystem)
             .registerSystem(ColliderSystem)
             .registerSystem(ShapeSystem)
             .registerSystem(InputSystem)
-            .registerSystem(PathFinderSystem);
+            .registerSystem(PathFinderSystem)
+            .registerSystem(UISystem);
 
         this.init();
 

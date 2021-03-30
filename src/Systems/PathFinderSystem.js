@@ -8,15 +8,21 @@ export class PathFinderSystem extends System {
     constructor(world) {
         super();
         this.world = world;
-        this.entities = this.world.entityManager._entities;
+        this._entities = this.world.entityManager._entities;
 
+        this.startNode = undefined;
+        this.endNode = undefined;
+        this.exploringEntities = [];
         this.searchTickSteps = 5;
         this.buildPathTickSteps = 1;
         this.baseWeight = 1;
     }
 
     init() {
-        this.entities.forEach(entity => {
+        this.isFinded = false;
+        this.lastDiscoveredPathEntity = undefined;
+
+        this._entities.forEach(entity => {
             if (!entity.hasComponent(NodeType) || !entity.hasComponent(Edges) || !entity.hasComponent(AStarPathFinder)) {
                 return;
             }
@@ -30,10 +36,26 @@ export class PathFinderSystem extends System {
                 this.endNode = entity;
                 this.endNodePosition = this.endNode.getComponent(Position);
             }
+
+            if ([NodeType.EXPLORING, NodeType.EXPLORED, NodeType.PATH].includes(nodeType.id)) {
+                nodeType.id = NodeType.FREE;
+                const aStarPathFinder = entity.getComponent(AStarPathFinder);
+                aStarPathFinder.clear();
+            }
         });
     }
 
+    clear() {
+        this.isFinded = false;
+        this.lastDiscoveredPathEntity = undefined;
+        this.init();
+    }
+
     execute() {
+        if (!this.isEnabled) {
+            return;
+        }
+
         if (this.isFinded) {
             for (let i = 0; i < this.buildPathTickSteps; i++) {
                 if (!this.lastDiscoveredPathEntity) {
@@ -69,13 +91,10 @@ export class PathFinderSystem extends System {
             const aEntityAStarPathFinder = aEntity.getComponent(AStarPathFinder);
             const bEntityAStarPathFinder = bEntity.getComponent(AStarPathFinder);
 
-            const aEntityCost = aEntityAStarPathFinder.cost + aEntityAStarPathFinder.heuristic; // f = g + h
-            const bEntityCost = bEntityAStarPathFinder.cost + bEntityAStarPathFinder.heuristic; // f = g + h
-
-            return aEntityCost - bEntityCost;
+            return bEntityAStarPathFinder.totalCost - aEntityAStarPathFinder.totalCost;
         });
 
-        const currentEntity = this.exploringEntities.shift();
+        const currentEntity = this.exploringEntities.pop();
         if (!currentEntity || !currentEntity.hasComponent(NodeType) || !currentEntity.hasComponent(Edges) || !currentEntity.hasComponent(AStarPathFinder)) {
             return;
         }

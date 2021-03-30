@@ -1,85 +1,130 @@
 import { System } from '../System.js';
-import { Position } from '../Components/Position.js';
-import { Scale } from '../Components/Scale.js';
 import { Shape } from '../Components/Shape.js';
 import { ShapeType } from '../Components/ShapeType.js';
 import { Canvas } from '../Components/Canvas.js';
+import { UI } from '../Components/UI.js';
 
 export class CanvasRendererSystem extends System {
     constructor(world) {
         super();
         this.world = world;
-        this.entities = this.world.entityManager._entities;
-        this.canvasEntity = this.world.createEntity('Canvas').addComponent(Canvas);
+        this._entities = this.world.entityManager._entities;
+        this.redraw = false;
     }
 
     init() {
+        this.canvasSceneEntity = this.world.createEntity('CanvasScene').addComponent(Canvas);
+        this.canvasUiEntity = this.world.createEntity('CanvasUi').addComponent(Canvas);
+
+        //if (!this.canvasSceneEntity) {
+            //this.canvasSceneEntity = this.world.entityManager.getEntityByName('CanvasScene');
+            //if (this.canvasSceneEntity && this.canvasSceneEntity.hasComponent(Canvas)) {
+                this.canvasSceneComponent = this.canvasSceneEntity.getComponent(Canvas);
+                this.canvasScene = this.canvasSceneComponent.canvas = document.getElementById('canvas-scene');
+                if (this.canvasScene) {
+                    this.ctxScene = this.canvasSceneComponent.ctx = this.canvasScene.getContext('2d');
+                } else {
+                    console.warn('canvasScene not found');
+                }
+            //} else {
+            //    console.warn('canvasSceneEntity not found');
+            //}
+        //}
+
+        //if (!this.canvasUiEntity) {
+            //this.canvasUiEntity = this.world.entityManager.getEntityByName('CanvasUi');
+            //if (this.canvasUiEntity && this.canvasUiEntity.hasComponent(Canvas)) {
+                this.canvasUiComponent = this.canvasUiEntity.getComponent(Canvas);
+                this.canvasUi = this.canvasUiComponent.canvas = document.getElementById('canvas-ui');
+                if (this.canvasUi) {
+                    this.ctxUi = this.canvasUiComponent.ctx = this.canvasUi.getContext('2d');
+                } else {
+                    console.warn('canvasUi not found');
+                }
+            //} else {
+            //    console.warn('canvasUiEntity not found');
+            //}
+        //}
+
+        this.onResizeCanvas();
         window.addEventListener('resize', () => this.onResizeCanvas());
     }
 
     execute() {
-        if (this.canvas) {
-            this.render();
-        } else {
-            this.canvasEntity = this.world.entityManager.getEntityByName('Canvas');
-            if (this.canvasEntity && this.canvasEntity.hasComponent(Canvas)) {
-                this.canvasComponent = this.canvasEntity.getComponent(Canvas);
-                this.canvas = this.canvasComponent.canvas;
-                this.ctx = this.canvasComponent.ctx;
-                this.onResizeCanvas();
-            }
-        }
+        this.render();
     }
 
     render() {
-        this.clearCanvas();
+        if (this.canvasScene) {
+            //CanvasRendererSystem.clearCanvas(this.canvasScene, this.ctxScene);
+            this.renderEntites();
+        }
 
-        this.renderEntites();
+        if (this.canvasUi) {
+            //CanvasRendererSystem.clearCanvas(this.canvasUi, this.ctxUi);
+            //this.renderUi();
+        }
     }
 
-    clearCanvas() {
-        //this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+    static clearCanvas(canvas, ctx) {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
     }
 
     onResizeCanvas() {
-        if (this.canvas) {
-            this.canvas.width = window.innerWidth;
-            this.canvas.height = window.innerHeight;
+        if (this.canvasScene) {
+            this.canvasScene.width = window.innerWidth;
+            this.canvasScene.height = window.innerHeight;
         }
-        this.reDraw = true;
+        if (this.canvasUi) {
+            this.canvasUi.width = window.innerWidth;
+            this.canvasUi.height = window.innerHeight;
+        }
+        this.redraw = true;
     }
 
     renderEntites() {
-        this.entities.forEach(entity => {
-            if (!entity.hasComponent(Position) || !entity.hasComponent(Scale) || !entity.hasComponent(Shape)) {
+        this._entities.forEach(entity => {
+            if (!entity.hasComponent(Shape)) {
                 return;
             }
 
-            const position = entity.getComponent(Position);
-            const scale = entity.getComponent(Scale);
             const shape = entity.getComponent(Shape);
+
+            const ctx = entity.hasComponent(UI) ? this.ctxUi : this.ctxScene;
+
             switch (shape.primitive) {
                 case ShapeType.BOX:
-                    this.drawRect(position.x, position.y, scale.x, scale.y, { shape });
+                    this.drawRect(ctx, shape);
                     break;
                 default:
-                    this.drawRect(position.x, position.y, scale.x, scale.y, { shape });
+                    this.drawRect(ctx, shape);
                     break;
             }
         });
 
-        this.reDraw = false;
+        this.redraw = false;
     }
 
-    drawRect(x, y, width, height, { shape }) {
+    drawRect(ctx, shape) {
+        let redraw = this.redraw;
+
         if (!shape.path2D) {
             shape.path2D = new Path2D();
-            shape.path2D.rect(x, y, width, height);
+            shape.path2D.rect(shape.rect.x, shape.rect.y, shape.rect.width, shape.rect.height);
         }
 
-        if (shape.color != shape.previous.color || this.reDraw) {
-            this.ctx.fillStyle = shape.color;
-            this.ctx.fill(shape.path2D);
+        if (shape.color != shape.previous.color) {
+            ctx.fillStyle = shape.color;
+            shape.previous.color = shape.color;
+            redraw = true;
         }
+
+        if (redraw) {
+            ctx.fillRect(shape.rect.x, shape.rect.y, shape.rect.width, shape.rect.height);
+        }
+    }
+
+    drawButton() {
+        
     }
 }

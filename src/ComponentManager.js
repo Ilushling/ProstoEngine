@@ -18,7 +18,12 @@ export class ComponentManager {
     onEntityAddComponent(Component) {
         this.componentsCount[Component._typeId]++;
     }
+
     onEntityRemoveComponent(Component) {
         this.componentsCount[Component._typeId]--;
+    }
+
+    stats() {
+        return;
     }
 }

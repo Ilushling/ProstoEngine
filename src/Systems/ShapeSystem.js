@@ -7,14 +7,14 @@ export class ShapeSystem extends System {
     constructor(world) {
         super();
         this.world = world;
-        this.entities = this.world.entityManager._entities;
+        this._entities = this.world.entityManager._entities;
     }
 
     init() {
     }
 
     execute() {
-        this.entities.forEach(entity => {
+        this._entities.forEach(entity => {
             if (!entity.hasComponent(Shape) || !entity.hasComponent(NodeType) || !entity.hasComponent(Hover)) {
                 return;
             }

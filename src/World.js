@@ -12,7 +12,7 @@ export class World {
         this.systemManager = new SystemManager(this);
         this.inputManager = new InputManager(this);
 
-        this.enabled = true;
+        this.start();
     }
 
     init() {
@@ -51,13 +51,17 @@ export class World {
 
     execute(deltaTime) {
         if (this.enabled) {
-            this.inputManager?.update();
+            if (this.inputManager) {
+                this.inputManager.update();
+            }
             this.systemManager.execute(deltaTime);
         }
     }
 
     start() {
         this.enabled = true;
+        
+        this.canvasSceneEntity = this.createEntity('1');
     }
 
     stop() {

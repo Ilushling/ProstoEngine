@@ -5,6 +5,8 @@ export class Shape extends Component {
         super();
         this.primitive = primitive;
         this.color = color;
+        this.path2D = undefined;
+        this.rect = {};
         this.previous = { };
     }
 }
