@@ -87,44 +87,40 @@ export class GridGeneratorSystem extends System {
                 const upRight = nodesMatrix[y - 1]    ? nodesMatrix[y - 1][x + 1] : undefined;
                 const downRight  = nodesMatrix[y + 1] ? nodesMatrix[y + 1][x + 1] : undefined;
 
-                const newEdges = [];
-
                 if (up) {
                     const upEdge = new Edge({ node: up, weight: baseWeight });
-                    newEdges.push(upEdge);
+                    entityEdges.edges.push(upEdge);
                 }
                 if (left) {
                     const leftEdge = new Edge({ node: left, weight: baseWeight });
-                    newEdges.push(leftEdge);
+                    entityEdges.edges.push(leftEdge);
                 }
                 if (down) {
                     const downEdge = new Edge({ node: down, weight: baseWeight });
-                    newEdges.push(downEdge);
+                    entityEdges.edges.push(downEdge);
                 }
                 if (right) {
                     const rightEdge = new Edge({ node: right, weight: baseWeight });
-                    newEdges.push(rightEdge);
+                    entityEdges.edges.push(rightEdge);
                 }
 
                 // Diagonals
                 if (upLeft) {
                     const upLeftEdge = new Edge({ node: upLeft, weight: baseWeight * 1.4 });
-                    newEdges.push(upLeftEdge);
+                    entityEdges.edges.push(upLeftEdge);
                 }
                 if (downLeft) {
                     const downLeftEdge = new Edge({ node: downLeft, weight: baseWeight * 1.4 });
-                    newEdges.push(downLeftEdge);
+                    entityEdges.edges.push(downLeftEdge);
                 }
                 if (upRight) {
                     const upRightEdge = new Edge({ node: upRight, weight: baseWeight * 1.4 });
-                    newEdges.push(upRightEdge);
+                    entityEdges.edges.push(upRightEdge);
                 }
                 if (downRight) {
                     const downRightEdge = new Edge({ node: downRight, weight: baseWeight * 1.4 });
-                    newEdges.push(downRightEdge);
+                    entityEdges.edges.push(downRightEdge);
                 }
-
-                entityEdges.edges.push(...newEdges);
             });
         });
     }

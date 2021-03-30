@@ -8,14 +8,16 @@ export class InputManager {
             y: 0,
             leftButton: {
                 up: false,
-                down: false
+                down: false,
+                pressed: false
             },
             previous: {
                 x: 0,
                 y: 0,
                 leftButton: {
                     up: false,
-                    down: false
+                    down: false,
+                    pressed: false
                 }
             }
         };

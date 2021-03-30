@@ -69,13 +69,13 @@ export class ColliderSystem extends System {
                 // Fast check collision in Web Worker
                 if (shape.primitive == ShapeType.BOX) {
                     // 5 columns
-                    entitiesToCheckCollideInWorker.push(...[
+                    entitiesToCheckCollideInWorker.push(
                         entity.id,
                         position.x, 
                         position.y, 
                         scale.x, 
                         scale.y
-                    ]);
+                    );
 
                     return;
                 }

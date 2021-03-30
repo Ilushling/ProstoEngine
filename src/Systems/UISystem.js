@@ -63,8 +63,6 @@ export class UISystem extends System {
                 'UIStartButtonOnClick',
                 () => this.startStopPathFinder()
             );
-        } else {
-            console.log('cant create StartButton');
         }
     }
 
