@@ -128,7 +128,7 @@ export class ColliderSystem extends System {
             const scale = entity.getComponent(Scale);
 
             if (shape.path2D && this.world.inputManager) {
-                if (shape.primitive != ShapeType.BOX) {
+                if (shape.primitive == ShapeType.BOX) {
                     if (this.worker) {
                         this.worker.postMessage({
                             entityId: key,
