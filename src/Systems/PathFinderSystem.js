@@ -19,10 +19,11 @@ export class PathFinderSystem extends System {
     }
 
     init() {
+        this.isEnabled = false;
         this.isFinded = false;
         this.lastDiscoveredPathEntity = undefined;
 
-        for (const entity of this._entities) {
+        this._entities.forEach(entity => {
             if (!entity.hasComponent(NodeType) || !entity.hasComponent(Edges) || !entity.hasComponent(AStarPathFinder)) {
                 return;
             }
@@ -42,7 +43,7 @@ export class PathFinderSystem extends System {
                 const aStarPathFinder = entity.getComponent(AStarPathFinder);
                 aStarPathFinder.clear();
             }
-        }
+        });
     }
 
     clear() {
@@ -107,7 +108,7 @@ export class PathFinderSystem extends System {
             return;
         }
 
-        for (const edge of currentEdgesComponent.edges) {
+        currentEdgesComponent.edges.forEach(edge => {
             const edgeEntity = edge.node;
             if (!edgeEntity.hasComponent(NodeType) || !edgeEntity.hasComponent(Edges) || !edgeEntity.hasComponent(AStarPathFinder) || !edgeEntity.hasComponent(Position)) {
                 return;
@@ -117,7 +118,7 @@ export class PathFinderSystem extends System {
             const aStarPathFinder = edgeEntity.getComponent(AStarPathFinder);
             const position = edgeEntity.getComponent(Position);
 
-            if (![NodeType.FREE, NodeType.EXPLORING, NodeType.END].indexOf(nodeType.id) !== -1) {
+            if ([NodeType.FREE, NodeType.EXPLORING, NodeType.END].indexOf(nodeType.id) === -1) {
                 return;
             }
 
@@ -138,7 +139,7 @@ export class PathFinderSystem extends System {
                 aStarPathFinder.previous = currentEntity;
                 this.exploringEntities.push(edgeEntity);
             }
-        }
+        });
 
         if (currentNodeType.id == NodeType.END) {
             isFinded = true;

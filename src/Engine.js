@@ -37,8 +37,8 @@ export class Engine {
             .registerSystem(InputSystem)
             .registerSystem(ColliderSystem)
             .registerSystem(ShapeSystem)
-            .registerSystem(PathFinderSystem)
             .registerSystem(GridGeneratorSystem)
+            .registerSystem(PathFinderSystem)
             .registerSystem(CanvasRendererSystem)
             .registerSystem(UISystem);
 

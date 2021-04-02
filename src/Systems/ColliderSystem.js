@@ -129,15 +129,6 @@ export class ColliderSystem extends System {
 
             if (shape.path2D && this.world.inputManager) {
                 if (shape.primitive == ShapeType.BOX) {
-                    if (this.worker) {
-                        this.worker.postMessage({
-                            entityId: key,
-                            rect: { x: position.x, y: position.y, width: scale.x, height: scale.y },
-                            point: this.world.inputManager.mouse,
-                            isInterpolate: this.world.inputManager.isMouseInterpolate
-                        });
-                        continue;
-                    }
                     collider.isMouseCollided = this.collides2D(
                         { x: position.x, y: position.y, width: scale.x, height: scale.y }, 
                         this.world.inputManager.mouse, 

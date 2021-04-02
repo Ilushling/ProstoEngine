@@ -4,16 +4,16 @@ export class InputManager {
         this.context = document;
 
         this.mouse = {
-            x: 0,
-            y: 0,
+            x: -1,
+            y: -1,
             leftButton: {
                 up: false,
                 down: false,
                 pressed: false
             },
             previous: {
-                x: 0,
-                y: 0,
+                x: -1,
+                y: -1,
                 leftButton: {
                     up: false,
                     down: false,
@@ -29,6 +29,10 @@ export class InputManager {
         this.context.onmouseup   = event => this.onMouseUp(event);
         this.context.onmousedown = event => this.onMouseDown(event);
         this.context.onmousemove = event => this.onMouseMove(event);
+
+        this.context.ontouchend   = event => this.onTouchEnd(event);
+        this.context.ontouchstart = event => this.onTouchStart(event);
+        this.context.ontouchmove = event => this.onTouchMove(event);
     }
 
     onMouseUp(event) {
@@ -47,14 +51,30 @@ export class InputManager {
         this.mouseTemp.y = mousePosition.y;
     }
 
+    onTouchEnd(event) {
+        this.mouseTemp.leftButton.up = true;
+        this.mouseTemp.leftButton.pressed = false;
+    }
+
+    onTouchStart(event) {
+        this.mouseTemp.leftButton.down = true;
+        this.mouseTemp.leftButton.pressed = true;
+    }
+
+    onTouchMove(event) {
+        const mousePosition = this.getMousePosition(event);
+        this.mouseTemp.x = mousePosition.x;
+        this.mouseTemp.y = mousePosition.y;
+    }
+
     getMousePosition(event) {
-        return { x: event.clientX, y: event.clientY };
+        return { x: event.clientX ?? event.changedTouches[0].clientX, y: event.clientY ?? event.changedTouches[0].clientY };
     }
 
     update() {
         // Save previous
-        this.mouse.previous.x = this.mouse.x;
-        this.mouse.previous.y = this.mouse.y;
+        this.mouse.previous.x = this.mouse.x == -1 ? this.mouseTemp.x : this.mouse.x;
+        this.mouse.previous.y = this.mouse.y == -1 ? this.mouseTemp.y : this.mouse.y;
         this.mouse.previous.leftButton.up      = this.mouse.leftButton.up;
         this.mouse.previous.leftButton.down    = this.mouse.leftButton.down;
         this.mouse.previous.leftButton.pressed = this.mouse.leftButton.pressed;
