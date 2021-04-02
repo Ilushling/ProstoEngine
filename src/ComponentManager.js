@@ -12,7 +12,7 @@ export class ComponentManager {
     }
 
     hasComponent(Component) {
-        return this.Components.includes(Component);
+        return this.Components.indexOf(Component) !== -1;
     }
 
     onEntityAddComponent(Component) {

@@ -83,9 +83,9 @@ export class CanvasRendererSystem extends System {
     }
 
     renderEntites() {
-        this._entities.forEach(entity => {
+        for (const entity of this._entities) {
             if (!entity.hasComponent(Shape)) {
-                return;
+                continue;
             }
 
             const shape = entity.getComponent(Shape);
@@ -94,20 +94,18 @@ export class CanvasRendererSystem extends System {
 
             switch (shape.primitive) {
                 case ShapeType.BOX:
-                    this.drawRect(ctx, shape);
+                    CanvasRendererSystem.drawRect(ctx, shape, this.redraw);
                     break;
                 default:
-                    this.drawRect(ctx, shape);
+                    CanvasRendererSystem.drawRect(ctx, shape, this.redraw);
                     break;
             }
-        });
+        }
 
         this.redraw = false;
     }
 
-    drawRect(ctx, shape) {
-        let redraw = this.redraw;
-
+    static drawRect(ctx, shape, redraw = false) {
         if (!shape.path2D) {
             shape.path2D = new Path2D();
             shape.path2D.rect(shape.rect.x, shape.rect.y, shape.rect.width, shape.rect.height);
@@ -122,9 +120,5 @@ export class CanvasRendererSystem extends System {
         if (redraw) {
             ctx.fillRect(shape.rect.x, shape.rect.y, shape.rect.width, shape.rect.height);
         }
-    }
-
-    drawButton() {
-        
     }
 }

@@ -13,7 +13,7 @@ export class EventDispatcher {
     }
 
     hasEventListener(eventName, listener) {
-        return this._listeners[eventName] != undefined && this._listeners[eventName].includes(listener);
+        return this._listeners[eventName] != undefined && this._listeners[eventName].indexOf(listener) !== -1;
     }
 
     removeEventListener(eventName, listener) {

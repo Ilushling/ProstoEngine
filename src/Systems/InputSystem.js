@@ -14,9 +14,9 @@ export class InputSystem extends System {
     }
 
     execute() {
-        this._entities.forEach(entity => {
+        for (const entity of this._entities) {
             if (!entity.hasComponent(Collider) || !entity.hasComponent(Hover) || !entity.hasComponent(NodeType)) {
-                return;
+                continue;
             }
 
             const collider = entity.getComponent(Collider);
@@ -34,10 +34,10 @@ export class InputSystem extends System {
                     }
                 }
 
-                if (this.world.inputManager.mouse.leftButton.pressed && [NodeType.FREE, NodeType.WALL].includes(nodeType.id)) {
+                if (this.world.inputManager.mouse.leftButton.pressed && [NodeType.FREE, NodeType.WALL].indexOf(nodeType.id) !== -1) {
                     nodeType.id = this.nodeTypeMouseMode;
                 }
             }
-        });
+        }
     }
 }

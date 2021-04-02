@@ -42,8 +42,8 @@ export class EntityManager {
     }
 
     removeAllEntities() {
-        for (let i = 0, length = this._entities.length; i < length; i++) {
-            this.removeEntity(this._entities[i]);
+        for (const entity of this._entities) {
+            this.removeEntity(entity);
         }
     }
 
@@ -66,9 +66,9 @@ export class EntityManager {
     }
 
     entityRemoveAllComponents(entity) {
-        entity._ComponentsTypes.forEach(Component => {
+        for (const Component of entity._ComponentsTypes) {
             this.entityRemoveComponent(entity, Component);
-        });
+        }
     }
 
     getEntityById(id) {

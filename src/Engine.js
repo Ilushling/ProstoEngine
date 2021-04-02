@@ -34,12 +34,12 @@ export class Engine {
             .registerComponent(Edges)
             .registerComponent(AStarPathFinder)
             .registerComponent(UI)
-            .registerSystem(GridGeneratorSystem)
-            .registerSystem(CanvasRendererSystem)
+            .registerSystem(InputSystem)
             .registerSystem(ColliderSystem)
             .registerSystem(ShapeSystem)
-            .registerSystem(InputSystem)
             .registerSystem(PathFinderSystem)
+            .registerSystem(GridGeneratorSystem)
+            .registerSystem(CanvasRendererSystem)
             .registerSystem(UISystem);
 
         this.init();

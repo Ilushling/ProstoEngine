@@ -14,9 +14,9 @@ export class ShapeSystem extends System {
     }
 
     execute() {
-        this._entities.forEach(entity => {
+        for (const entity of this._entities) {
             if (!entity.hasComponent(Shape) || !entity.hasComponent(NodeType) || !entity.hasComponent(Hover)) {
-                return;
+                continue;
             }
 
             const nodeType = entity.getComponent(NodeType);
@@ -26,7 +26,8 @@ export class ShapeSystem extends System {
             shape.previous.color = shape.color;
 
             if (hover.isMouseHover) {
-                return shape.color = '#d3d3d3';
+                shape.color = '#d3d3d3';
+                continue;
             }
 
             switch (nodeType.id) {
@@ -55,6 +56,6 @@ export class ShapeSystem extends System {
                     shape.color = '#ffffff';
                     break;
             }
-        });
+        }
     }
 }

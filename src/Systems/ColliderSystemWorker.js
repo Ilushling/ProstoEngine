@@ -4,6 +4,10 @@ addEventListener('message', event => {
     const point = data.point;
     const isInterpolate = data.isInterpolate;
     const columns = 5; // Columns from ColliderSystem
+
+    if (isInterpolate) {
+        var interpolatedPointPositions = interpolatePointPositions(point);
+    }
     
     const entityResult = [];
     for (let i = 0, length = entitiesBuffer.byteLength / 2 / columns; i < length; i++) {
@@ -17,47 +21,7 @@ addEventListener('message', event => {
         };
         entityResult.push(entityId);
 
-        let isCollide = isRectContainsPoint(rect, point);
-        if (isCollide) {
-            entityResult.push(isCollide);
-            continue;
-        }
-
-        if (!isInterpolate) {
-            break;
-        }
-        
-        const distance = {
-            x: Math.abs(point.previous.x - point.x),
-            y: Math.abs(point.previous.y - point.y)
-        };
-
-        const direction = {
-            x: point.x - point.previous.x,
-            y: point.y - point.previous.y
-        };
-
-        // Normalize vector
-        const invLen = (1 / Math.sqrt(direction.x ** 2 + direction.y ** 2));
-        direction.normalized = {
-            x: direction.x * invLen,
-            y: direction.y * invLen
-        }
-
-        const interpolateSteps = (distance.x + distance.y) / 20;
-
-        // Interpolate
-        const stepX = direction.normalized.x * distance.x / interpolateSteps;
-        const stepY = direction.normalized.y * distance.y / interpolateSteps;
-        
-        for (let interpolateI = 1; interpolateI <= interpolateSteps; interpolateI++) {
-            isCollide = isRectContainsPoint(rect, { x: point.previous.x + stepX * interpolateI, y: point.previous.y + stepY * interpolateI });
-
-            if (isCollide) {
-                break;
-            }
-        }
-
+        const isCollide = collides(rect, point, isInterpolate, interpolatedPointPositions);
         entityResult.push(isCollide);
     }
 
@@ -65,6 +29,64 @@ addEventListener('message', event => {
     return postMessage(entitiesBufferResult, [entitiesBufferResult]);
 });
 
-function isRectContainsPoint(rect, point) {
-    return rect.x <= point.x && point.x <= rect.x + rect.width && rect.y <= point.y && point.y <= rect.y + rect.height;
+function interpolatePointPositions(point) {
+    const interpolatedPointPositions = [];
+
+    const distance = {
+        x: Math.abs(point.previous.x - point.x),
+        y: Math.abs(point.previous.y - point.y)
+    };
+
+    const direction = {
+        x: point.x - point.previous.x,
+        y: point.y - point.previous.y
+    };
+
+    // Normalize vector
+    const invLen = (1 / Math.sqrt(direction.x ** 2 + direction.y ** 2));
+    direction.normalized = {
+        x: direction.x * invLen,
+        y: direction.y * invLen
+    }
+
+    const interpolateSteps = (distance.x + distance.y) / 20;
+
+    // Interpolate
+    const stepX = direction.normalized.x * distance.x / interpolateSteps;
+    const stepY = direction.normalized.y * distance.y / interpolateSteps;
+    
+    for (let i = 1; i <= interpolateSteps; i++) {
+        // Collide detected by interpolation
+        interpolatedPointPositions.push({ x: point.previous.x + stepX * i, y: point.previous.y + stepY * i });
+    }
+
+    return interpolatedPointPositions;
+}
+
+function collides(rect, point, isInterpolate = false, interpolatedPointPositions = []) {
+    let isCollide = rectContains(rect, point);
+    if (isCollide) {
+        return isCollide;
+    }
+
+    if (!isInterpolate) {
+        return false;
+    }
+
+    for (const interpolatedPointPosition of interpolatedPointPositions) {
+        isCollide = rectContains(rect, interpolatedPointPosition);
+
+        if (isCollide) {
+            return isCollide;
+        }
+    }
+
+    return false;
+}
+
+function rectContains(rect, point) {
+    return rect.x  <= point.x && 
+           point.x <= rect.x + rect.width && 
+           rect.y  <= point.y && 
+           point.y <= rect.y + rect.height;
 }

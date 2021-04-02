@@ -110,9 +110,9 @@ export class UISystem extends System {
     }
 
     execute() {
-        this._entities.forEach(entity => {
+        for (const entity of this._entities) {
             if (!entity.hasComponent(UI) || !entity.hasComponent(Collider)) {
-                return;
+                continue;
             }
 
             if (entity.id == this.startButtonId) {
@@ -120,7 +120,7 @@ export class UISystem extends System {
                 if (collider.isMouseCollided && this.world.inputManager.mouse.leftButton.down) {
                     this.eventDispatcher.dispatchEvent('UIStartButtonOnClick', entity);
                 }
-                return;
+                continue;
             }
 
             if (entity.id == this.clearButtonId) {
@@ -128,9 +128,9 @@ export class UISystem extends System {
                 if (collider.isMouseCollided && this.world.inputManager.mouse.leftButton.down) {
                     this.eventDispatcher.dispatchEvent('UIClearButtonOnClick', entity);
                 }
-                return;
+                continue;
             }
-        });
+        }
     }
 
     startStopPathFinder() {

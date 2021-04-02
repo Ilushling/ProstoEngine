@@ -22,7 +22,7 @@ export class PathFinderSystem extends System {
         this.isFinded = false;
         this.lastDiscoveredPathEntity = undefined;
 
-        this._entities.forEach(entity => {
+        for (const entity of this._entities) {
             if (!entity.hasComponent(NodeType) || !entity.hasComponent(Edges) || !entity.hasComponent(AStarPathFinder)) {
                 return;
             }
@@ -37,12 +37,12 @@ export class PathFinderSystem extends System {
                 this.endNodePosition = this.endNode.getComponent(Position);
             }
 
-            if ([NodeType.EXPLORING, NodeType.EXPLORED, NodeType.PATH].includes(nodeType.id)) {
+            if ([NodeType.EXPLORING, NodeType.EXPLORED, NodeType.PATH].indexOf(nodeType.id) !== -1) {
                 nodeType.id = NodeType.FREE;
                 const aStarPathFinder = entity.getComponent(AStarPathFinder);
                 aStarPathFinder.clear();
             }
-        });
+        }
     }
 
     clear() {
@@ -103,11 +103,11 @@ export class PathFinderSystem extends System {
         const currentEdgesComponent = currentEntity.getComponent(Edges);
         const currentAStarPathFinder = currentEntity.getComponent(AStarPathFinder);
 
-        if ([NodeType.EXPLORED].includes(currentNodeType.id)) {
+        if ([NodeType.EXPLORED].indexOf(currentNodeType.id) !== -1) {
             return;
         }
 
-        currentEdgesComponent.edges.forEach(edge => {
+        for (const edge of currentEdgesComponent.edges) {
             const edgeEntity = edge.node;
             if (!edgeEntity.hasComponent(NodeType) || !edgeEntity.hasComponent(Edges) || !edgeEntity.hasComponent(AStarPathFinder) || !edgeEntity.hasComponent(Position)) {
                 return;
@@ -117,7 +117,7 @@ export class PathFinderSystem extends System {
             const aStarPathFinder = edgeEntity.getComponent(AStarPathFinder);
             const position = edgeEntity.getComponent(Position);
 
-            if (![NodeType.FREE, NodeType.EXPLORING, NodeType.END].includes(nodeType.id)) {
+            if (![NodeType.FREE, NodeType.EXPLORING, NodeType.END].indexOf(nodeType.id) !== -1) {
                 return;
             }
 
@@ -138,7 +138,7 @@ export class PathFinderSystem extends System {
                 aStarPathFinder.previous = currentEntity;
                 this.exploringEntities.push(edgeEntity);
             }
-        });
+        }
 
         if (currentNodeType.id == NodeType.END) {
             isFinded = true;

@@ -35,7 +35,7 @@ export class SystemManager {
     }
 
     hasSystem(System) {
-        return this._systems.includes(System);
+        return this._systems.indexOf(System) !== -1;
     }
 
     getSystem(System) {
@@ -65,7 +65,9 @@ export class SystemManager {
     }
 
     execute(deltaTime) {
-        this._executeSystems.forEach(system => this.executeSystem(system, deltaTime));
+        for (const system of this._executeSystems) {
+            this.executeSystem(system, deltaTime);
+        }
     }
 
     stats() {

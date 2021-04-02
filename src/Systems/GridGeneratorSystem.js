@@ -73,8 +73,19 @@ export class GridGeneratorSystem extends System {
         this.world.entityManager.getEntityById(endEntityId).getComponent(NodeType).id = NodeType.END;
 
         // Node edges
-        nodesMatrix.forEach((nodeMatrixX, y) => {
-            nodeMatrixX.forEach((entity, x) => {
+        for (const y in nodesMatrix) {
+            if (Object.hasOwnProperty.call(nodesMatrix, y)) {
+                continue;
+            }
+
+            const nodeMatrixX = nodesMatrix[y];
+            for (const x in nodeMatrixX) {
+                if (Object.hasOwnProperty.call(nodeMatrixX, x)) {
+                    continue;
+                }
+
+                const entity = nodesMatrix[x];
+
                 const entityEdges = entity.getComponent(Edges);
 
                 const up    = nodesMatrix[y - 1]    ? nodesMatrix[y - 1][x] : undefined;
@@ -121,8 +132,8 @@ export class GridGeneratorSystem extends System {
                     const downRightEdge = new Edge({ node: downRight, weight: baseWeight * 1.4 });
                     entityEdges.edges.push(downRightEdge);
                 }
-            });
-        });
+            }
+        }
     }
 
     static getRandomInteger(min, max) {
