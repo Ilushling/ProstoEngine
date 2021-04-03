@@ -30,7 +30,7 @@ export class ColliderSystem extends System {
 
                     const entity = this._entities[entityId];
                     if (!entity) {
-                        return;
+                        continue;
                     }
     
                     const collider = entity.getComponent(Collider);
@@ -85,6 +85,7 @@ export class ColliderSystem extends System {
             }
 
             const entitiesCount = entitiesToCheckCollideInWorker.length;
+            const entitiesTypedArray = new Uint16Array(entitiesToCheckCollideInWorker);
             // Columns to ColliderSystemWorker (in entitiesToCheckCollideInWorker)
             const columns = 5;
             for (let i = 0; i < workersCount; i++) {
@@ -96,7 +97,7 @@ export class ColliderSystem extends System {
                 const start = count * i;
                 const limit = start + count;
 
-                const entitiesBuffer = new Uint16Array(entitiesToCheckCollideInWorker.slice(start, limit)).buffer;
+                const entitiesBuffer = entitiesTypedArray.slice(start, limit).buffer;
 
                 worker.postMessage({
                     point: this.world.inputManager.mouse,
@@ -112,12 +113,7 @@ export class ColliderSystem extends System {
             var interpolatedPointPositions = ColliderSystem.interpolatePointPositions(this.world.inputManager.mouse);
         }
 
-        for (const key in entitiesToCheckCollide) {
-            if (!Object.hasOwnProperty.call(entitiesToCheckCollide, key)) {
-                continue;
-            }
-            const entity = entitiesToCheckCollide[key];
-
+        for (const entity of entitiesToCheckCollide) {
             if (!entity.hasComponent(Collider) || !entity.hasComponent(Shape) || !entity.hasComponent(Position) || !entity.hasComponent(Scale)) {
                 continue;
             }
@@ -223,25 +219,5 @@ export class ColliderSystem extends System {
                point.x <= rect.x + rect.width && 
                rect.y  <= point.y && 
                point.y <= rect.y + rect.height;
-    }
-
-    static stringToUint(string) {
-        const str = btoa(unescape(encodeURIComponent(string)))
-        const uintArray = []
-        const len = str.length
-      
-        let i = -1
-      
-        while (++i < len) {
-          uintArray[i] = str.charCodeAt(i)
-        }
-      
-        return new Uint8Array(uintArray);
-    }
-    
-    static uintToString(uintArray) {
-        var encodedString = String.fromCharCode.apply(null, uintArray),
-            decodedString = decodeURIComponent(escape(atob(encodedString)));
-        return decodedString;
     }
 }
