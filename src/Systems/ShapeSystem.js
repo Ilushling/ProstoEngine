@@ -25,7 +25,7 @@ export class ShapeSystem extends System {
 
             shape.previous.color = shape.color;
 
-            if (hover.isMouseHover) {
+            if (hover.isPointerHover) {
                 shape.color = '#d3d3d3';
                 continue;
             }

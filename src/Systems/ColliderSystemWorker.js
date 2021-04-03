@@ -37,7 +37,7 @@ function interpolatePointPositions(point) {
         y: Math.abs(point.previous.y - point.y)
     };
 
-    const interpolateSteps = (distance.x + distance.y) / 40;
+    const interpolateSteps = point.x == -1 || point.y == -1 ? 0 : (distance.x + distance.y) / 40;
     
     for (let i = 0; i <= interpolateSteps; i++) {
         interpolatedPointPositions.push({

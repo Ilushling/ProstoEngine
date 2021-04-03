@@ -14,7 +14,7 @@ export class ColliderSystem extends System {
     }
 
     init() {
-        this.workersCount = 1;
+        this.workersCount = 0; // @TODO InputSystem checking collider.isPointerCollided
         this.workers = [];
         for (let i = 0; i < this.workersCount; i++) {
             this.workers.push(new Worker('src/Systems/ColliderSystemWorker.js', { type: 'module' }));
@@ -35,7 +35,7 @@ export class ColliderSystem extends System {
                     }
     
                     const collider = entity.getComponent(Collider);
-                    collider.isMouseCollided = isCollide;
+                    collider.isPointerCollided = isCollide;
                 }
             };
         }
@@ -101,8 +101,8 @@ export class ColliderSystem extends System {
                 const entitiesBuffer = entitiesTypedArray.slice(start, limit).buffer;
 
                 worker.postMessage({
-                    point: this.world.inputManager.mouse,
-                    isInterpolate: this.world.inputManager.isMouseInterpolate,
+                    point: this.world.inputManager.pointer,
+                    isInterpolate: this.world.inputManager.isPointerInterpolate,
                     entitiesBuffer,
                 }, [entitiesBuffer]);
             }
@@ -110,8 +110,8 @@ export class ColliderSystem extends System {
             entitiesToCheckCollide = this._entities;
         }
 
-        if (this.world.inputManager.isMouseInterpolate) {
-            var interpolatedPointPositions = ColliderSystem.interpolatePointPositions(this.world.inputManager.mouse);
+        if (this.world.inputManager.isPointerInterpolate) {
+            var interpolatedPointPositions = ColliderSystem.interpolatePointPositions(this.world.inputManager.pointer);
         }
 
         for (const entity of entitiesToCheckCollide) {
@@ -126,14 +126,14 @@ export class ColliderSystem extends System {
 
             if (shape.path2D && this.world.inputManager) {
                 if (shape.primitive == ShapeType.BOX) {
-                    collider.isMouseCollided = ColliderSystem.collides(
+                    collider.isPointerCollided = ColliderSystem.collides(
                         { x: position.x, y: position.y, width: scale.x, height: scale.y }, 
-                        this.world.inputManager.mouse, 
-                        this.world.inputManager.isMouseInterpolate, 
+                        this.world.inputManager.pointer, 
+                        this.world.inputManager.isPointerInterpolate, 
                         interpolatedPointPositions
                     );
                 } else {
-                    collider.isMouseCollided = this.collides2D(shape.path2D, this.world.inputManager.mouse, this.world.inputManager.isMouseInterpolate, interpolatedPointPositions);
+                    collider.isPointerCollided = this.collides2D(shape.path2D, this.world.inputManager.pointer, this.world.inputManager.isPointerInterpolate, interpolatedPointPositions);
                 }
             }
         }

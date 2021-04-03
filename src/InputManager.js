@@ -3,7 +3,7 @@ export class InputManager {
         this.world = world;
         this.context = document;
 
-        this.mouse = {
+        this.pointer = {
             x: -1,
             y: -1,
             leftButton: {
@@ -22,72 +22,58 @@ export class InputManager {
             }
         };
 
-        this.mouseTemp = JSON.parse(JSON.stringify(this.mouse));
+        this.pointerTemp = JSON.parse(JSON.stringify(this.pointer));
 
-        this.isMouseInterpolate = true;
+        this.isPointerInterpolate = true;
 
-        this.context.onmouseup   = event => this.onMouseUp(event);
-        this.context.onmousedown = event => this.onMouseDown(event);
-        this.context.onmousemove = event => this.onMouseMove(event);
-
-        this.context.ontouchend   = event => this.onTouchEnd(event);
-        this.context.ontouchstart = event => this.onTouchStart(event);
-        this.context.ontouchmove = event => this.onTouchMove(event);
+        this.context.onpointerup   = event => this.onPointerUp(event);
+        this.context.onpointerdown = event => this.onPointerDown(event);
+        this.context.onpointermove = event => this.onPointerMove(event);
     }
 
-    onMouseUp(event) {
-        this.mouseTemp.leftButton.up = true;
-        this.mouseTemp.leftButton.pressed = false;
+    onPointerUp(event) {
+        this.pointerTemp.leftButton.up = true;
+        this.pointerTemp.leftButton.pressed = false;
     }
 
-    onMouseDown(event) {
-        this.mouseTemp.leftButton.down = true;
-        this.mouseTemp.leftButton.pressed = true;
+    onPointerDown(event) {
+        this.pointerTemp.leftButton.down = true;
+        this.pointerTemp.leftButton.pressed = true;
+
+        if (event.pointerType == 'touch') {
+            this.pointer.previous.x = -1;
+            this.pointer.previous.y = -1;
+            this.onPointerMove(event);
+        }
     }
 
-    onMouseMove(event) {
-        const mousePosition = this.getMousePosition(event);
-        this.mouseTemp.x = mousePosition.x;
-        this.mouseTemp.y = mousePosition.y;
+    onPointerMove(event) {
+        const pointerPosition = this.getPointerPosition(event);
+        this.pointerTemp.x = pointerPosition.x;
+        this.pointerTemp.y = pointerPosition.y;
     }
 
-    onTouchEnd(event) {
-        this.mouseTemp.leftButton.up = true;
-        this.mouseTemp.leftButton.pressed = false;
-    }
-
-    onTouchStart(event) {
-        this.mouseTemp.leftButton.down = true;
-        this.mouseTemp.leftButton.pressed = true;
-    }
-
-    onTouchMove(event) {
-        const mousePosition = this.getMousePosition(event);
-        this.mouseTemp.x = mousePosition.x;
-        this.mouseTemp.y = mousePosition.y;
-    }
-
-    getMousePosition(event) {
-        return { x: event.clientX ?? event.changedTouches[0].clientX, y: event.clientY ?? event.changedTouches[0].clientY };
+    getPointerPosition(event) {
+        return { x: event.clientX, y: event.clientY };
     }
 
     update() {
         // Save previous
-        this.mouse.previous.x = this.mouse.x == -1 ? this.mouseTemp.x : this.mouse.x;
-        this.mouse.previous.y = this.mouse.y == -1 ? this.mouseTemp.y : this.mouse.y;
-        this.mouse.previous.leftButton.up      = this.mouse.leftButton.up;
-        this.mouse.previous.leftButton.down    = this.mouse.leftButton.down;
-        this.mouse.previous.leftButton.pressed = this.mouse.leftButton.pressed;
+        this.pointer.previous.x = this.pointer.previous.x == -1 ? this.pointerTemp.x : this.pointer.x;
+        this.pointer.previous.y = this.pointer.previous.y == -1 ? this.pointerTemp.y : this.pointer.y;
+        this.pointer.previous.leftButton.up      = this.pointer.leftButton.up;
+        this.pointer.previous.leftButton.down    = this.pointer.leftButton.down;
+        this.pointer.previous.leftButton.pressed = this.pointer.leftButton.pressed;
 
         // Update
-        this.mouse.x = this.mouseTemp.x;
-        this.mouse.y = this.mouseTemp.y;
-        this.mouse.leftButton.up      = this.mouseTemp.leftButton.up;
-        this.mouse.leftButton.down    = this.mouseTemp.leftButton.down;
-        this.mouse.leftButton.pressed = this.mouseTemp.leftButton.pressed;
+        this.pointer.x = this.pointerTemp.x;
+        this.pointer.y = this.pointerTemp.y;
+        this.pointer.leftButton.up      = this.pointerTemp.leftButton.up;
+        this.pointer.leftButton.down    = this.pointerTemp.leftButton.down;
+        this.pointer.leftButton.pressed = this.pointerTemp.leftButton.pressed;
 
         // Clear
-        this.mouseTemp.leftButton.up   = false;
-        this.mouseTemp.leftButton.down = false;
+        this.pointerTemp.leftButton.up   = false;
+        this.pointerTemp.leftButton.down = false;
     }
 }

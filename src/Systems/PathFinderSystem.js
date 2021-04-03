@@ -16,10 +16,11 @@ export class PathFinderSystem extends System {
         this.searchTickSteps = 5;
         this.buildPathTickSteps = 1;
         this.baseWeight = 1;
+
+        this.isEnabled = false;
     }
 
     init() {
-        this.isEnabled = false;
         this.isFinded = false;
         this.lastDiscoveredPathEntity = undefined;
 

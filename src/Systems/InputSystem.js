@@ -22,20 +22,21 @@ export class InputSystem extends System {
             const collider = entity.getComponent(Collider);
             const hover = entity.getComponent(Hover);
             const nodeType = entity.getComponent(NodeType);
-            hover.isMouseHover = collider.isMouseCollided;
+            hover.isPointerHover = collider.isPointerCollided;
 
-            if (collider.isMouseCollided) {
-                if (this.world.inputManager.mouse.leftButton.down) {
+            if (collider.isPointerCollided) { // @TODO ColliderSystem Web Worker can break logic
+                if (this.world.inputManager.pointer.leftButton.down) {
                     if (nodeType.id == NodeType.FREE) {
-                        this.nodeTypeMouseMode = NodeType.WALL;
+                        this.nodeTypePointerMode = NodeType.WALL;
                     }
                     if (nodeType.id == NodeType.WALL) {
-                        this.nodeTypeMouseMode = NodeType.FREE;
+                        this.nodeTypePointerMode = NodeType.FREE;
                     }
+                    return;
                 }
 
-                if (this.world.inputManager.mouse.leftButton.pressed && [NodeType.FREE, NodeType.WALL].indexOf(nodeType.id) !== -1) {
-                    nodeType.id = this.nodeTypeMouseMode;
+                if (this.world.inputManager.pointer.leftButton.pressed && [NodeType.FREE, NodeType.WALL].indexOf(nodeType.id) !== -1) {
+                    nodeType.id = this.nodeTypePointerMode;
                 }
             }
         }

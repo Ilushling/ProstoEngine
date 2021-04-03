@@ -117,7 +117,7 @@ export class UISystem extends System {
 
             if (entity.id == this.startButtonId) {
                 const collider = entity.getComponent(Collider);
-                if (collider.isMouseCollided && this.world.inputManager.mouse.leftButton.down) {
+                if (collider.isPointerCollided && this.world.inputManager.pointer.leftButton.down) {
                     this.eventDispatcher.dispatchEvent('UIStartButtonOnClick', entity);
                 }
                 continue;
@@ -125,7 +125,7 @@ export class UISystem extends System {
 
             if (entity.id == this.clearButtonId) {
                 const collider = entity.getComponent(Collider);
-                if (collider.isMouseCollided && this.world.inputManager.mouse.leftButton.down) {
+                if (collider.isPointerCollided && this.world.inputManager.pointer.leftButton.down) {
                     this.eventDispatcher.dispatchEvent('UIClearButtonOnClick', entity);
                 }
                 continue;

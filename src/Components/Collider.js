@@ -3,6 +3,6 @@ export class Collider extends Component {
     constructor() {
         super();
         this.collided = [];
-        this.isMouseCollided = false;
+        this.isPointerCollided = false;
     }
 }
