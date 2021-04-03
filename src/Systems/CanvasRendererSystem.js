@@ -79,6 +79,7 @@ export class CanvasRendererSystem extends System {
             this.canvasUi.width = window.innerWidth;
             this.canvasUi.height = window.innerHeight;
         }
+
         this.redraw = true;
     }
 
@@ -112,12 +113,12 @@ export class CanvasRendererSystem extends System {
         }
 
         if (shape.color != shape.previous.color) {
-            ctx.fillStyle = shape.color;
             shape.previous.color = shape.color;
             redraw = true;
         }
 
         if (redraw) {
+            ctx.fillStyle = shape.color;
             ctx.fillRect(shape.rect.x, shape.rect.y, shape.rect.width, shape.rect.height);
         }
     }

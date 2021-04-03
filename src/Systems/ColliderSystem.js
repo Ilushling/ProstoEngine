@@ -129,14 +129,14 @@ export class ColliderSystem extends System {
 
             if (shape.path2D && this.world.inputManager) {
                 if (shape.primitive == ShapeType.BOX) {
-                    collider.isMouseCollided = this.collides2D(
+                    collider.isMouseCollided = ColliderSystem.collides(
                         { x: position.x, y: position.y, width: scale.x, height: scale.y }, 
                         this.world.inputManager.mouse, 
                         this.world.inputManager.isMouseInterpolate, 
                         interpolatedPointPositions
                     );
                 } else {
-                    collider.isMouseCollided = ColliderSystem.collides2D(shape.path2D, this.world.inputManager.mouse, this.world.inputManager.isMouseInterpolate, interpolatedPointPositions);
+                    collider.isMouseCollided = this.collides2D(shape.path2D, this.world.inputManager.mouse, this.world.inputManager.isMouseInterpolate, interpolatedPointPositions);
                 }
             }
         }
@@ -198,7 +198,7 @@ export class ColliderSystem extends System {
     }
 
     static collides(rect, point, isInterpolate = false, interpolatedPointPositions = []) {
-        let isCollide = rectContains(rect, point);
+        let isCollide = this.rectContains(rect, point);
         if (isCollide) {
             return isCollide;
         }
@@ -208,7 +208,7 @@ export class ColliderSystem extends System {
         }
     
         for (const interpolatedPointPosition of interpolatedPointPositions) {
-            isCollide = rectContains(rect, interpolatedPointPosition);
+            isCollide = this.rectContains(rect, interpolatedPointPosition);
     
             if (isCollide) {
                 return isCollide;
