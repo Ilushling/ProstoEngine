@@ -22,6 +22,7 @@ export class ColliderSystem extends System {
 
             const columns = 2; // Columns from ColliderSystemWorker
             worker.onmessage = event => {
+                // @TODO packages may get lost because web worker can handles longer than frame
                 const entitiesBuffer = new Uint16Array(event.data);
                 for (let j = 0, length = entitiesBuffer.length; j < length; j += columns) {
                     const entityOffset = j;
@@ -146,30 +147,21 @@ export class ColliderSystem extends System {
             y: Math.abs(point.previous.y - point.y)
         };
     
-        const direction = {
-            x: point.x - point.previous.x,
-            y: point.y - point.previous.y
-        };
-    
-        // Normalize vector
-        const invLen = (1 / Math.sqrt(direction.x ** 2 + direction.y ** 2));
-        direction.normalized = {
-            x: direction.x * invLen,
-            y: direction.y * invLen
-        }
-    
-        const interpolateSteps = (distance.x + distance.y) / 20;
-    
-        // Interpolate
-        const stepX = direction.normalized.x * distance.x / interpolateSteps;
-        const stepY = direction.normalized.y * distance.y / interpolateSteps;
+        const interpolateSteps = (distance.x + distance.y) / 40;
         
-        for (let i = 1; i <= interpolateSteps; i++) {
-            // Collide detected by interpolation
-            interpolatedPointPositions.push({ x: point.previous.x + stepX * i, y: point.previous.y + stepY * i });
+        for (let i = 0; i <= interpolateSteps; i++) {
+            const lerpPoint = {
+                x: ColliderSystem.lerp(point.previous.x, point.x, i / interpolateSteps),
+                y: ColliderSystem.lerp(point.previous.y, point.y, i / interpolateSteps)
+            };
+            interpolatedPointPositions.push(lerpPoint);
         }
     
         return interpolatedPointPositions;
+    }
+    
+    static lerp(start, end, weight) {
+        return start * (1 - weight) + end * weight;
     }
 
     collides2D(path2D, point, isInterpolate = false, interpolatedPointPositions = []) {
