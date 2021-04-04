@@ -32,7 +32,6 @@ export class InputSystem extends System {
                     if (nodeType.id == NodeType.WALL) {
                         this.nodeTypePointerMode = NodeType.FREE;
                     }
-                    return;
                 }
 
                 if (this.world.inputManager.pointer.leftButton.pressed && [NodeType.FREE, NodeType.WALL].indexOf(nodeType.id) !== -1) {
