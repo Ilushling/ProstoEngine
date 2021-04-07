@@ -27,7 +27,7 @@ export class PathFinderSystem extends System {
         for (let i = this._entities.length; i--;) { // Backward is faster
             const entity = this.world.entityManager.getEntityById(i);
             if (!entity.hasComponent(NodeType) || !entity.hasComponent(Edges) || !entity.hasComponent(AStarPathFinder)) {
-                return;
+                continue;
             }
 
             const nodeType = entity.getComponent(NodeType);
@@ -49,8 +49,6 @@ export class PathFinderSystem extends System {
     }
 
     clear() {
-        this.isFinded = false;
-        this.lastDiscoveredPathEntity = undefined;
         this.init();
     }
 
