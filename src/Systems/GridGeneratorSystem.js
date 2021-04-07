@@ -13,7 +13,7 @@ export class GridGeneratorSystem extends System {
     constructor(world) {
         super();
         this.world = world;
-        this._entities = this.world.entityManager._entities;
+        this._entities = this.world.entityManager.getAllEntities();
         this.width = typeof window !== 'undefined' ? window.innerWidth : 500;
         this.height = typeof window !== 'undefined' ? window.innerHeight : 500;
     }

@@ -35,7 +35,7 @@ export class SystemManager {
     }
 
     hasSystem(System) {
-        return this._systems.indexOf(System) !== -1;
+        return this._systems.includes(System);
     }
 
     getSystem(System) {
@@ -65,8 +65,8 @@ export class SystemManager {
     }
 
     execute(deltaTime) {
-        for (const system of this._executeSystems) {
-            this.executeSystem(system, deltaTime);
+        for (let i = 0, len = this._executeSystems.length; i < len; i++) {
+            this.executeSystem(this._executeSystems[i], deltaTime);
         }
     }
 

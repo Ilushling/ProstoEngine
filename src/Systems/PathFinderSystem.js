@@ -8,7 +8,7 @@ export class PathFinderSystem extends System {
     constructor(world) {
         super();
         this.world = world;
-        this._entities = this.world.entityManager._entities;
+        this._entities = this.world.entityManager.getAllEntities();
 
         this.startNode = undefined;
         this.endNode = undefined;
@@ -39,7 +39,7 @@ export class PathFinderSystem extends System {
                 this.endNodePosition = this.endNode.getComponent(Position);
             }
 
-            if ([NodeType.EXPLORING, NodeType.EXPLORED, NodeType.PATH].indexOf(nodeType.id) !== -1) {
+            if ([NodeType.EXPLORING, NodeType.EXPLORED, NodeType.PATH].includes(nodeType.id)) {
                 nodeType.id = NodeType.FREE;
                 const aStarPathFinder = entity.getComponent(AStarPathFinder);
                 aStarPathFinder.clear();
@@ -105,7 +105,7 @@ export class PathFinderSystem extends System {
         const currentEdgesComponent = currentEntity.getComponent(Edges);
         const currentAStarPathFinder = currentEntity.getComponent(AStarPathFinder);
 
-        if ([NodeType.EXPLORED].indexOf(currentNodeType.id) !== -1) {
+        if ([NodeType.EXPLORED].includes(currentNodeType.id)) {
             return;
         }
 
@@ -119,7 +119,7 @@ export class PathFinderSystem extends System {
             const aStarPathFinder = edgeEntity.getComponent(AStarPathFinder);
             const position = edgeEntity.getComponent(Position);
 
-            if ([NodeType.FREE, NodeType.EXPLORING, NodeType.END].indexOf(nodeType.id) === -1) {
+            if ([NodeType.FREE, NodeType.EXPLORING, NodeType.END].includes(nodeType.id)) {
                 return;
             }
 

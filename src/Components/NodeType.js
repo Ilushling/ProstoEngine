@@ -13,6 +13,6 @@ export class NodeType extends Component {
     }
 
     static isWalkable(nodeTypeId) {
-        return [NodeType.FREE, NodeType.EXPLORING, NodeType.END].indexOf(nodeTypeId) !== -1;
+        return [NodeType.FREE, NodeType.EXPLORING, NodeType.END].includes(nodeTypeId);
     }
 }

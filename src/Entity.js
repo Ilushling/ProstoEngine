@@ -14,7 +14,7 @@ export class Entity {
     }
 
     hasComponent(Component) {
-        return this._ComponentsTypes.indexOf(Component) !== -1;
+        return this._ComponentsTypes.includes(Component);
     }
 
     getComponent(Component) {

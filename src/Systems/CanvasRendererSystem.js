@@ -8,7 +8,7 @@ export class CanvasRendererSystem extends System {
     constructor(world) {
         super();
         this.world = world;
-        this._entities = this.world.entityManager._entities;
+        this._entities = this.world.entityManager.getAllEntities();
         this.redraw = false;
     }
 
@@ -84,7 +84,8 @@ export class CanvasRendererSystem extends System {
     }
 
     renderEntites() {
-        for (const entity of this._entities) {
+        for (let i = this._entities.length; i--;) { // Backward is faster
+            const entity = this.world.entityManager.getEntityById(i);
             if (!entity.hasComponent(Shape)) {
                 continue;
             }

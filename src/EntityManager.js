@@ -42,8 +42,8 @@ export class EntityManager {
     }
 
     removeAllEntities() {
-        for (const entity of this._entities) {
-            this.removeEntity(entity);
+        for (let i = this._entities.length; i--;) { // Backward is faster
+            this.removeEntity(this.getEntityById(i));
         }
     }
 
@@ -66,7 +66,8 @@ export class EntityManager {
     }
 
     entityRemoveAllComponents(entity) {
-        for (const Component of entity._ComponentsTypes) {
+        for (let i = entity._ComponentsTypes.length; i--;) { // Backward is faster
+            const Component = entity._ComponentsTypes[i];
             this.entityRemoveComponent(entity, Component);
         }
     }
@@ -77,6 +78,10 @@ export class EntityManager {
 
     getEntityByName(name) {
         return this._entitiesByName[name];
+    }
+
+    getAllEntities() {
+        return this._entities;
     }
 
     stats() {

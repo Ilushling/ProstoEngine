@@ -7,14 +7,15 @@ export class InputSystem extends System {
     constructor(world) {
         super();
         this.world = world;
-        this._entities = this.world.entityManager._entities;
+        this._entities = this.world.entityManager.getAllEntities();
     }
 
     init() {
     }
 
     execute() {
-        for (const entity of this._entities) {
+        for (let i = this._entities.length; i--;) { // Backward is faster
+            const entity = this.world.entityManager.getEntityById(i);
             if (!entity.hasComponent(Collider) || !entity.hasComponent(Hover) || !entity.hasComponent(NodeType)) {
                 continue;
             }
@@ -34,7 +35,7 @@ export class InputSystem extends System {
                     }
                 }
 
-                if (this.world.inputManager.pointer.leftButton.pressed && [NodeType.FREE, NodeType.WALL].indexOf(nodeType.id) !== -1) {
+                if (this.world.inputManager.pointer.leftButton.pressed && [NodeType.FREE, NodeType.WALL].includes(nodeType.id)) {
                     nodeType.id = this.nodeTypePointerMode;
                 }
             }

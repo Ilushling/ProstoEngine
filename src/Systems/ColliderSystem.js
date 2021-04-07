@@ -10,7 +10,7 @@ export class ColliderSystem extends System {
     constructor(world) {
         super();
         this.world = world;
-        this._entities = this.world.entityManager._entities;
+        this._entities = this.world.entityManager.getAllEntities();
     }
 
     init() {
@@ -29,7 +29,7 @@ export class ColliderSystem extends System {
                     const entityId = entitiesBuffer[entityOffset];
                     const isCollide = entitiesBuffer[entityOffset + 1];
 
-                    const entity = this._entities[entityId];
+                    const entity = this.world.entityManager.getEntityById(entityId);
                     if (!entity) {
                         continue;
                     }
@@ -58,7 +58,8 @@ export class ColliderSystem extends System {
         if (workersCount) {
             // Prepare entities for check collision in worker
             const entitiesToCheckCollideInWorker = [];
-            for (const entity of this._entities) {
+            for (let i = this._entities.length; i--;) { // Backward is faster
+                const entity = this.world.entityManager.getEntityById(i);
                 if (!entity.hasComponent(Collider) || !entity.hasComponent(Shape) || !entity.hasComponent(Position) || !entity.hasComponent(Scale)) {
                     continue;
                 }
@@ -114,7 +115,8 @@ export class ColliderSystem extends System {
             var interpolatedPointPositions = ColliderSystem.interpolatePointPositions(this.world.inputManager.pointer);
         }
 
-        for (const entity of entitiesToCheckCollide) {
+        for (let i = entitiesToCheckCollide.length; i--;) { // Backward is faster
+            const entity = entitiesToCheckCollide[i];
             if (!entity.hasComponent(Collider) || !entity.hasComponent(Shape) || !entity.hasComponent(Position) || !entity.hasComponent(Scale)) {
                 continue;
             }
@@ -159,7 +161,7 @@ export class ColliderSystem extends System {
     
         return interpolatedPointPositions;
     }
-    
+
     static lerp(start, end, weight) {
         return start * (1 - weight) + end * weight;
     }
