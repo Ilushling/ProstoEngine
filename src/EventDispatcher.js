@@ -29,8 +29,8 @@ export class EventDispatcher {
     dispatchEvent(eventName, entity, component) {
         const listeners = this._listeners[eventName];
         if (listeners != undefined) {
-            for (let i = 0, len = listeners.length; i++ < len;) {
-                listener(listeners[i], component);
+            for (let i = 0, len = listeners.length; i < len; i++) {
+                listeners[i](entity, component);
             }
         }
     }
