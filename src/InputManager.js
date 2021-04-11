@@ -38,29 +38,34 @@ export class InputManager {
     }
 
     onPointerUp(event) {
-        event.preventDefault();
-
         this.pointerTemp.leftButton.up = true;
         this.pointerTemp.leftButton.pressed = false;
     }
 
     onPointerDown(event) {
         event.preventDefault();
-
         this.pointerTemp.leftButton.down = true;
         this.pointerTemp.leftButton.pressed = true;
+
+        if (event.pointerType == 'touch' || event.touches) {
+            this.pointer.previous.x = -1;
+            this.pointer.previous.y = -1;
+            this.onPointerMove(event);
+        }
     }
 
     onPointerMove(event) {
         event.preventDefault();
 
+        //console.log(event);
         const pointerPosition = this.getPointerPosition(event);
+        //console.log(pointerPosition);
         this.pointerTemp.x = pointerPosition.x;
         this.pointerTemp.y = pointerPosition.y;
     }
 
     getPointerPosition(event) {
-        return { x: event.clientX, y: event.clientY };
+        return { x: event.clientX ?? event.touches[0].clientX, y: event.clientY ?? event.touches[0].clientY };
     }
 
     update() {
