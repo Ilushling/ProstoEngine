@@ -2,7 +2,7 @@ export class Entity {
     constructor(entityManager) {
         this._entityManager = entityManager;
 
-        this.id = entityManager.newEntityId++;
+        this.id = entityManager.newEntityId;
 
         this._components = [];
         this._ComponentsTypes = [];

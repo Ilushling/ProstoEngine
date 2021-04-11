@@ -9,10 +9,6 @@ export class SystemManager {
     registerSystem(System) {
         const system = new System(this.world);
 
-        if (typeof system.init == 'function') {
-            system.init();
-        }
-
         this._systems.push(system);
         if (typeof system.execute == 'function') {
             this._executeSystems.push(system);
@@ -54,19 +50,33 @@ export class SystemManager {
         this._systems.splice(index, 1);
     }
 
-    executeSystem(system, deltaTime) {
-        if (system.initialized && system.enabled) {
-            if (system.canExecute()) {
-                const startTime = new Date();
-                system.execute(deltaTime);
-                system.executeTime = new Date() - startTime;
-            }
+    async initSystems() {
+        for (let i = 0, len = this._systems.length; i < len; i++) {
+            await this.initSystem(this._systems[i]);
         }
     }
 
-    execute(deltaTime) {
+    async initSystem(system) {
+        const startTime = Date.now();
+        if (typeof system.init == 'function') {
+            await system.init();
+        }
+        system.executeTime = Date.now() - startTime;
+
+        system.initialized = true;
+    }
+
+    async executeSystem(system, deltaTime) {
+        if (system.canExecute()) {
+            const startTime = Date.now();
+            await system.execute(deltaTime);
+            system.executeTime = Date.now() - startTime;
+        }
+    }
+
+    async execute(deltaTime) {
         for (let i = 0, len = this._executeSystems.length; i < len; i++) {
-            this.executeSystem(this._executeSystems[i], deltaTime);
+            await this.executeSystem(this._executeSystems[i], deltaTime);
         }
     }
 

@@ -1,29 +1,31 @@
 import { Entity } from './Entity.js';
-import { EventDispatcher } from './EventDispatcher.js';
 
 export class EntityManager {
     constructor(world) {
         this.world = world;
         this.componentManager = world.componentManager;
-        this.eventDispatcher = new EventDispatcher();
 
-        this._entities = [];
-        this._entitiesByName = [];
+        this._entities = new Map();
+        this._entitiesByName = new Map();
 
         this.newEntityId = 0;
         this.entitiesCount = 0;
     }
 
-    createEntity(name = '') {
+    createEntity(name) {
         const entity = new Entity(this);
-        if (this._entitiesByName[name]) {
-            throw new Error(`Entity name ${name} already exists`);
+
+        if (name != undefined) {
+            if (this._entitiesByName.has(name)) {
+                throw new Error(`Entity name ${name} already exists`);
+            }
+
+            entity.name = name;
+            this._entitiesByName.set(name, entity);
         }
+        this._entities.set(this.newEntityId, entity);
 
-        entity.name = name;
-        this._entitiesByName[name] = entity;
-        this._entities.push(entity);
-
+        this.newEntityId++;
         this.entitiesCount++;
 
         return entity;
@@ -32,19 +34,18 @@ export class EntityManager {
     removeEntity(entity) {
         this.entityRemoveAllComponents(entity);
 
-        const entityIndex = this._entities.indexOf(entity);
-        this._entities.splice(entityIndex, 1);
-        if (this._entitiesByName[entity.name]) {
-            delete this._entitiesByName[entity.name];
+        this._entities.delete(entity.id);
+        if (entity.hasOwnProperty('name') && this._entitiesByName.has(entity.name)) {
+            this._entitiesByName.delete(entity.name);
         }
 
         this.entitiesCount--;
     }
 
     removeAllEntities() {
-        for (let i = this._entities.length; i--;) { // Backward is faster
-            this.removeEntity(this.getEntityById(i));
-        }
+        this._entities.forEach(entity => {
+            this.removeEntity(entity);
+        });
     }
 
     entityAddComponent(entity, Component, data) {
@@ -52,7 +53,7 @@ export class EntityManager {
             throw new Error('Component not registered');
         }
         entity._ComponentsTypes.push(Component);
-        entity._components[Component._typeId] = new Component(data);
+        entity._components[Component._typeId] = new Component(entity.id);
         this.componentManager.onEntityAddComponent(Component);
     }
 
@@ -66,18 +67,18 @@ export class EntityManager {
     }
 
     entityRemoveAllComponents(entity) {
-        for (let i = entity._ComponentsTypes.length; i--;) { // Backward is faster
+        for (let i = entity._ComponentsTypes.length - 1; i > 0; i--) { // Backward is faster
             const Component = entity._ComponentsTypes[i];
             this.entityRemoveComponent(entity, Component);
         }
     }
 
     getEntityById(id) {
-        return this._entities[id];
+        return this._entities.get(id);
     }
 
     getEntityByName(name) {
-        return this._entitiesByName[name];
+        return this._entitiesByName.get(name);
     }
 
     getAllEntities() {

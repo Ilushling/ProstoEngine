@@ -2,13 +2,13 @@ export class System {
     constructor(world) {
         this.world = world;
         this.enabled = true;
-        this.initialized = true;
+        this.initialized = false;
 
         this.executeTime = 0;
     }
 
     canExecute() {
-        return true;
+        return this.initialized && this.enabled;
     }
 
     getName() {

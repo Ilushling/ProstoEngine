@@ -1,3 +1,5 @@
+import { Component } from '../Component.js';
+
 export class Rotation extends Component {
     constructor(x, y) {
         super();

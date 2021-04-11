@@ -5,11 +5,12 @@ import { Shape } from './Components/Shape.js';
 import { Canvas } from './Components/Canvas.js';
 import { Collider } from './Components/Collider.js';
 import { NodeType } from './Components/NodeType.js';
-import { Hover } from './Components/Hover.js';
 import { Edge } from './Components/Edge.js';
 import { Edges } from './Components/Edges.js';
 import { AStarPathFinder } from './Components/AStarPathFinder.js';
 import { UI } from './Components/UI.js';
+import { Renderable } from './Components/Renderable.js';
+import { Generated } from './Components/Generated.js';
 import { GridGeneratorSystem } from './Systems/GridGeneratorSystem.js';
 import { CanvasRendererSystem } from './Systems/CanvasRendererSystem.js';
 import { ColliderSystem } from './Systems/ColliderSystem.js';
@@ -26,31 +27,32 @@ export class Engine {
         this.world.registerComponent(Position)
             .registerComponent(Scale)
             .registerComponent(Shape)
-            .registerComponent(Canvas)
             .registerComponent(Collider)
             .registerComponent(NodeType)
-            .registerComponent(Hover)
             .registerComponent(Edge)
             .registerComponent(Edges)
-            .registerComponent(AStarPathFinder)
+            .registerComponent(Canvas)
+            .registerComponent(Renderable)
             .registerComponent(UI)
+            .registerComponent(AStarPathFinder)
+            .registerComponent(Generated)
+            //.registerSystem(InputSystem)
             .registerSystem(ColliderSystem)
-            .registerSystem(InputSystem)
+            .registerSystem(PathFinderSystem)
             .registerSystem(ShapeSystem)
             .registerSystem(GridGeneratorSystem)
-            .registerSystem(PathFinderSystem)
             .registerSystem(CanvasRendererSystem)
-            .registerSystem(UISystem);
+            //.registerSystem(UISystem)
 
         this.init();
 
         this.loop();
     }
 
-    loop(timeStamp = 0) {
+    async loop(timeStamp = 0) {
         this.deltaTime = Math.min(timeStamp - this.lastTimeStamp, 100) / 1000;
 
-        this.world.execute(this.deltaTime);
+        await this.world.execute(this.deltaTime);
 
         this.lastTimeStamp = timeStamp;
 
@@ -58,5 +60,6 @@ export class Engine {
     }
 
     init() {
+        this.world.systemManager.initSystems();
     }
 }

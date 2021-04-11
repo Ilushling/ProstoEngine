@@ -2,6 +2,7 @@ import { SystemManager } from './SystemManager.js';
 import { EntityManager } from './EntityManager.js';
 import { ComponentManager } from './ComponentManager.js';
 import { InputManager } from './InputManager.js';
+import { EventDispatcher } from './EventDispatcher.js';
 
 export class World {
     constructor(engine) {
@@ -11,6 +12,7 @@ export class World {
         this.entityManager = new EntityManager(this);
         this.systemManager = new SystemManager(this);
         this.inputManager = new InputManager(this);
+        this.eventDispatcher = new EventDispatcher();
 
         this.start();
     }
@@ -49,19 +51,15 @@ export class World {
         return this.systemManager.getSystems();
     }
 
-    execute(deltaTime) {
+    async execute(deltaTime) {
         if (this.enabled) {
-            if (this.inputManager) {
-                this.inputManager.update();
-            }
-            this.systemManager.execute(deltaTime);
+            this.inputManager.update();
+            await this.systemManager.execute(deltaTime);
         }
     }
 
     start() {
         this.enabled = true;
-        
-        this.canvasSceneEntity = this.createEntity('1');
     }
 
     stop() {

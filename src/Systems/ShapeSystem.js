@@ -1,62 +1,94 @@
 import { System } from '../System.js';
 import { Shape } from '../Components/Shape.js';
 import { NodeType } from '../Components/NodeType.js';
-import { Hover } from '../Components/Hover.js';
+import { Collider } from '../Components/Collider.js';
 
 export class ShapeSystem extends System {
     constructor(world) {
         super();
         this.world = world;
         this._entities = this.world.entityManager.getAllEntities();
+        this.eventDispatcher = this.world.eventDispatcher;
+
+        this.nodeTypePointerMode = undefined;
     }
 
     init() {
+        this.initListeners();
+    }
+
+    initListeners() {
+        // @TODO merge functions
+        this.eventDispatcher.addEventListener('nodeTypeOnChange', entityId => {
+            const entity = this.world.entityManager.getEntityById(entityId)
+            if (!entity.hasComponent(Shape) || !entity.hasComponent(NodeType)) {
+                return;
+            }
+
+            const shape = entity.getComponent(Shape);
+            const nodeType = entity.getComponent(NodeType);
+            const collider = entity.getComponent(Collider);
+
+            shape.color = ShapeSystem.getColor(nodeType.id, collider.isPointerCollided);
+        });
+
+        // @TODO merge functions
+        this.eventDispatcher.addEventListener('pointerCollidedOnChange', entityId => {
+            const entity = this.world.entityManager.getEntityById(entityId)
+            if (!entity.hasComponent(Shape) || !entity.hasComponent(NodeType) || !entity.hasComponent(Collider)) {
+                return;
+            }
+
+            const shape = entity.getComponent(Shape);
+            const nodeType = entity.getComponent(NodeType);
+            const collider = entity.getComponent(Collider);
+
+            const color = ShapeSystem.getColor(nodeType.id, collider.isPointerCollided);
+            shape.color = color;
+
+            if (collider.isPointerCollided) {
+                if (this.world.inputManager.pointer.leftButton.down) {
+                    if (nodeType.id == NodeType.FREE) {
+                        this.nodeTypePointerMode = NodeType.WALL;
+                    }
+                    if (nodeType.id == NodeType.WALL) {
+                        this.nodeTypePointerMode = NodeType.FREE;
+                    }
+                }
+
+                if (this.world.inputManager.pointer.leftButton.pressed && [NodeType.FREE, NodeType.WALL].includes(nodeType.id)) {
+                    nodeType.id = this.nodeTypePointerMode;
+                }
+            }
+        });
     }
 
     execute() {
-        for (let i = this._entities.length; i--;) { // Backward is faster
-            const entity = this.world.entityManager.getEntityById(i);
-            if (!entity.hasComponent(Shape) || !entity.hasComponent(NodeType) || !entity.hasComponent(Hover)) {
-                continue;
-            }
+        
+    }
 
-            const nodeType = entity.getComponent(NodeType);
-            const shape = entity.getComponent(Shape);
-            const hover = entity.getComponent(Hover);
+    static getColor(nodeTypeId, isPointerCollided) {
+        if (isPointerCollided) {
+            return '#d3d3d3';
+        }
 
-            shape.previous.color = shape.color;
-
-            if (hover.isPointerHover) {
-                shape.color = '#d3d3d3';
-                continue;
-            }
-
-            switch (nodeType.id) {
-                case NodeType.FREE:
-                    shape.color = '#ffffff';
-                    break;
-                case NodeType.WALL:
-                    shape.color = '#464646';
-                    break;
-                case NodeType.START:
-                    shape.color = '#00ff00';
-                    break;
-                case NodeType.END:
-                    shape.color = '#ff0000';
-                    break;
-                case NodeType.EXPLORING:
-                    shape.color = '#faf064';
-                    break;
-                case NodeType.EXPLORED:
-                    shape.color = '#a0e6ff';
-                    break;
-                case NodeType.PATH:
-                    shape.color = '#28b4fa';
-                    break;
-                default:
-                    shape.color = '#ffffff';
-                    break;
-            }
+        switch (nodeTypeId) {
+            case NodeType.FREE:
+                return '#ffffff';
+            case NodeType.WALL:
+                return '#464646';
+            case NodeType.START:
+                return '#00ff00';
+            case NodeType.END:
+                return '#ff0000';
+            case NodeType.EXPLORING:
+                return '#faf064';
+            case NodeType.EXPLORED:
+                return '#a0e6ff';
+            case NodeType.PATH:
+                return '#28b4fa';
+            default:
+                return '#ffffff';
         }
     }
 }

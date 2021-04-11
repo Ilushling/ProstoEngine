@@ -1,8 +1,18 @@
 import { Component } from '../Component.js';
+
 export class Collider extends Component {
-    constructor() {
-        super();
+    constructor(entityId) {
+        super(entityId);
         this.collided = [];
-        this.isPointerCollided = false;
+        this._isPointerCollided = false;
+    }
+
+    set isPointerCollided(isPointerCollided) {
+        this._isPointerCollided = isPointerCollided;
+        Collider.componentManager.world.eventDispatcher.dispatchEvent('pointerCollidedOnChange', this.entityId);
+    }
+
+    get isPointerCollided() {
+        return this._isPointerCollided;
     }
 }

@@ -1,4 +1,5 @@
 import { Component } from '../Component.js';
+
 export class NodeType extends Component {
     static FREE = 0;
     static WALL = 1;
@@ -7,9 +8,19 @@ export class NodeType extends Component {
     static EXPLORING = 4;
     static EXPLORED = 5;
     static PATH = 6;
-    constructor() {
-        super();
-        this.id = NodeType.FREE;
+
+    constructor(entityId) {
+        super(entityId);
+        this._id = NodeType.FREE;
+    }
+
+    get id() {
+        return this._id;
+    }
+
+    set id(id) {
+        this._id = id;
+        NodeType.componentManager.world.eventDispatcher.dispatchEvent('nodeTypeOnChange', this.entityId);
     }
 
     static isWalkable(nodeTypeId) {

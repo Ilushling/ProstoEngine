@@ -8,140 +8,177 @@ import { ShapeType } from '../Components/ShapeType.js';
 
 export class ColliderSystem extends System {
     constructor(world) {
-        super();
+        super(world);
         this.world = world;
         this._entities = this.world.entityManager.getAllEntities();
+        this.eventDispatcher = this.world.eventDispatcher;
+
+        this.defaults = {
+            cellSize: 20
+        };
+        // Need subtract from original value for more accuracy interpolation
+        this.cellSize = Math.ceil(this.defaults.cellSize - (this.defaults.cellSize / 4)) || this.defaults.cellSize;
     }
 
     init() {
-        this.workersCount = 0; // @TODO InputSystem checking collider.isPointerCollided
+        this.initListeners();
+
+        this.workersCount = 0;
+        this.workersResolvedCount = 0;
         this.workers = [];
-        for (let i = 0; i < this.workersCount; i++) {
-            this.workers.push(new Worker('src/Systems/ColliderSystemWorker.js', { type: 'module' }));
-            const worker = this.workers[i];
+        for (let i = this.workersCount - 1; i >= 0; i--) {
+            const worker = new Worker('src/Systems/ColliderSystemWorker.js', { type: 'module' });
+            this.workers.push(worker);
 
             const columns = 2; // Columns from ColliderSystemWorker
             worker.onmessage = event => {
                 // @TODO packages may get lost because web worker can handles longer than frame
-                const entitiesBuffer = new Uint16Array(event.data);
-                for (let j = 0, length = entitiesBuffer.length; j < length; j += columns) {
+                const entitiesTypedArray = new Uint32Array(event.data);
+                for (let j = entitiesTypedArray.length - columns; j >= 0; j -= columns) {
                     const entityOffset = j;
-                    const entityId = entitiesBuffer[entityOffset];
-                    const isCollide = entitiesBuffer[entityOffset + 1];
+                    const entityId = entitiesTypedArray[entityOffset];
+                    const isCollide = entitiesTypedArray[entityOffset + 1];
 
                     const entity = this.world.entityManager.getEntityById(entityId);
-                    if (!entity) {
+                    if (!entity || !entity.hasComponent(Collider)) {
                         continue;
                     }
-    
+
                     const collider = entity.getComponent(Collider);
                     collider.isPointerCollided = isCollide;
+                }
+
+                this.workersResolvedCount++;
+                if (this.workersResolvedCount == this.workersCount) {
+                    this.workersResolvedCount = 0;
+                    this.resolveSystemPromise();
                 }
             };
         }
     }
 
-    execute() {
-        if (!this.canvas) {
-            this.canvasEntity = this.world.entityManager.getEntityByName('CanvasScene');
-            if (this.canvasEntity && this.canvasEntity.hasComponent(Canvas)) {
-                this.canvasComponent = this.canvasEntity.getComponent(Canvas);
-                this.canvas = this.canvasComponent.canvas;
-                this.ctx = this.canvasComponent.ctx;
-            } else {
-                return;
-            }
-        }
+    initListeners() {
+        this.eventDispatcher.addEventListener('onGridGenerate', ({ cellSize }) => {
+            // Need subtract from original value for more accuracy interpolation
+            this.cellSize = Math.ceil(cellSize - (cellSize / 4)) 
+                || Math.ceil(this.defaults.cellSize - (this.defaults.cellSize / 4)) 
+                || this.defaults.cellSize;
+        });
+    }
 
-        const workersCount = this.workers.length;
-        let entitiesToCheckCollide = [];
-        if (workersCount) {
-            // Prepare entities for check collision in worker
-            const entitiesToCheckCollideInWorker = [];
-            for (let i = this._entities.length; i--;) { // Backward is faster
-                const entity = this.world.entityManager.getEntityById(i);
+    execute() {
+        return new Promise((resolve, reject) => {
+            this.resolveSystemPromise = resolve;
+            
+            if (!this.canvas) {
+                this.canvasEntity = this.world.entityManager.getEntityByName('CanvasScene');
+                if (this.canvasEntity && this.canvasEntity.hasComponent(Canvas)) {
+                    this.canvasComponent = this.canvasEntity.getComponent(Canvas);
+                    this.canvas = this.canvasComponent.canvas;
+                    this.ctx = this.canvasComponent.ctx;
+                } else {
+                    return this.resolveSystemPromise();
+                }
+            }
+
+            const workersCount = this.workers.length;
+            let entitiesToCheckCollide = [];
+            if (workersCount) {
+                // Prepare entities for check collision in worker
+                const entitiesToCheckCollideInWorker = [];
+                this._entities.forEach(entity => {
+                    if (!entity.hasComponent(Collider) || !entity.hasComponent(Shape) || !entity.hasComponent(Position) || !entity.hasComponent(Scale)) {
+                        return;
+                    }
+
+                    const shape = entity.getComponent(Shape);
+                    const position = entity.getComponent(Position);
+                    const scale = entity.getComponent(Scale);
+
+                    // Fast check collision in Web Worker
+                    if (shape.primitive == ShapeType.BOX) {
+                        // 6 columns
+                        entitiesToCheckCollideInWorker.push(
+                            entity.id,
+                            position.x, 
+                            position.y, 
+                            scale.x, 
+                            scale.y
+                        );
+
+                        return;
+                    }
+
+                    // For check collisions not in Web Worker
+                    entitiesToCheckCollide.push(entity);
+                });
+
+                // Columns to ColliderSystemWorker (in entitiesToCheckCollideInWorker)
+                const columns = 5;
+                const entitiesCount = entitiesToCheckCollideInWorker.length;
+                const remain = entitiesCount / workersCount % columns;
+                const count = entitiesCount / workersCount - remain;
+                let entitiesTypedArray = new Uint32Array(entitiesToCheckCollideInWorker);
+                for (let i = workersCount - 1; i >= 0; i--) {
+                    const worker = this.workers[i];
+                    if (!worker) {
+                        return;
+                    }
+
+                    const start = count * i;
+                    const limit = start + count + (i == workersCount - 1 ? remain * workersCount : 0);
+
+                    const entitiesBuffer = entitiesTypedArray.slice(start, limit).buffer;
+
+                    worker.postMessage({
+                        point: this.world.inputManager.pointer,
+                        isInterpolate: this.world.inputManager.isPointerInterpolate,
+                        workerI: i,
+                        cellSize: this.cellSize,
+                        columns,
+                        entitiesBuffer
+                    }, [entitiesBuffer]);
+                }
+                this.resolveSystemPromise();
+            } else {
+                entitiesToCheckCollide = this._entities;
+            }
+
+            if (this.world.inputManager.isPointerInterpolate) {
+                var interpolatedPointPositions = ColliderSystem.interpolatePointPositions(this.world.inputManager.pointer, this.cellSize);
+            }
+
+            entitiesToCheckCollide.forEach(entity => {
                 if (!entity.hasComponent(Collider) || !entity.hasComponent(Shape) || !entity.hasComponent(Position) || !entity.hasComponent(Scale)) {
-                    continue;
+                    return;
                 }
 
+                const collider = entity.getComponent(Collider);
                 const shape = entity.getComponent(Shape);
                 const position = entity.getComponent(Position);
                 const scale = entity.getComponent(Scale);
 
-                // Fast check collision in Web Worker
-                if (shape.primitive == ShapeType.BOX) {
-                    // 5 columns
-                    entitiesToCheckCollideInWorker.push(
-                        entity.id,
-                        position.x, 
-                        position.y, 
-                        scale.x, 
-                        scale.y
-                    );
-
-                    continue;
+                if (shape.path2D && this.world.inputManager) {
+                    if (shape.primitive == ShapeType.BOX) {
+                        collider.isPointerCollided = ColliderSystem.collides(
+                            { x: position.x, y: position.y, width: scale.x, height: scale.y }, 
+                            this.world.inputManager.pointer, 
+                            this.world.inputManager.isPointerInterpolate, 
+                            interpolatedPointPositions
+                        );
+                    } else {
+                        collider.isPointerCollided = this.collides2D(shape.path2D, this.world.inputManager.pointer, this.world.inputManager.isPointerInterpolate, interpolatedPointPositions);
+                    }
                 }
+            });
 
-                // For check collisions not in Web Worker
-                entitiesToCheckCollide.push(entity);
+            if (!workersCount) {
+                return this.resolveSystemPromise();
             }
-
-            const entitiesCount = entitiesToCheckCollideInWorker.length;
-            const entitiesTypedArray = new Uint16Array(entitiesToCheckCollideInWorker);
-            // Columns to ColliderSystemWorker (in entitiesToCheckCollideInWorker)
-            const columns = 5;
-            for (let i = 0; i < workersCount; i++) {
-                const worker = this.workers[i];
-                if (!worker) {
-                    return;
-                }
-                const count = entitiesCount / workersCount * columns;
-                const start = count * i;
-                const limit = start + count;
-
-                const entitiesBuffer = entitiesTypedArray.slice(start, limit).buffer;
-
-                worker.postMessage({
-                    point: this.world.inputManager.pointer,
-                    isInterpolate: this.world.inputManager.isPointerInterpolate,
-                    entitiesBuffer,
-                }, [entitiesBuffer]);
-            }
-        } else {
-            entitiesToCheckCollide = this._entities;
-        }
-
-        if (this.world.inputManager.isPointerInterpolate) {
-            var interpolatedPointPositions = ColliderSystem.interpolatePointPositions(this.world.inputManager.pointer);
-        }
-
-        for (let i = entitiesToCheckCollide.length; i--;) { // Backward is faster
-            const entity = entitiesToCheckCollide[i];
-            if (!entity.hasComponent(Collider) || !entity.hasComponent(Shape) || !entity.hasComponent(Position) || !entity.hasComponent(Scale)) {
-                continue;
-            }
-
-            const shape = entity.getComponent(Shape);
-            const collider = entity.getComponent(Collider);
-            const position = entity.getComponent(Position);
-            const scale = entity.getComponent(Scale);
-
-            if (shape.path2D && this.world.inputManager) {
-                if (shape.primitive == ShapeType.BOX) {
-                    collider.isPointerCollided = ColliderSystem.collides(
-                        { x: position.x, y: position.y, width: scale.x, height: scale.y }, 
-                        this.world.inputManager.pointer, 
-                        this.world.inputManager.isPointerInterpolate, 
-                        interpolatedPointPositions
-                    );
-                } else {
-                    collider.isPointerCollided = this.collides2D(shape.path2D, this.world.inputManager.pointer, this.world.inputManager.isPointerInterpolate, interpolatedPointPositions);
-                }
-            }
-        }
+        });
     }
 
-    static interpolatePointPositions(point) {
+    static interpolatePointPositions(point, accuracyDivider) {
         const interpolatedPointPositions = [];
     
         const distance = {
@@ -149,9 +186,9 @@ export class ColliderSystem extends System {
             y: Math.abs(point.previous.y - point.y)
         };
     
-        const interpolateSteps = (distance.x + distance.y) / 40;
+        const interpolateSteps = (distance.x + distance.y) / accuracyDivider;
         
-        for (let i = 0; i <= interpolateSteps; i++) {
+        for (let i = interpolateSteps; i > 0; i--) {
             const lerpPoint = {
                 x: ColliderSystem.lerp(point.previous.x, point.x, i / interpolateSteps),
                 y: ColliderSystem.lerp(point.previous.y, point.y, i / interpolateSteps)
@@ -175,8 +212,9 @@ export class ColliderSystem extends System {
         if (!isInterpolate) {
             return false;
         }
-    
-        for (const interpolatedPointPosition of interpolatedPointPositions) {
+
+        for (let i = interpolatedPointPositions.length - 1; i >= 0; i--) {
+            const interpolatedPointPosition = interpolatedPointPositions[i];
             isCollide = this.ctx.isPointInPath(path2D, interpolatedPointPosition);
     
             if (isCollide) {
@@ -197,7 +235,8 @@ export class ColliderSystem extends System {
             return false;
         }
     
-        for (const interpolatedPointPosition of interpolatedPointPositions) {
+        for (let i = interpolatedPointPositions.length - 1; i >= 0; i--) {
+            const interpolatedPointPosition = interpolatedPointPositions[i];
             isCollide = this.rectContains(rect, interpolatedPointPosition);
     
             if (isCollide) {

@@ -1,10 +1,12 @@
 import { System } from '../System.js';
+import { Generated } from '../Components/Generated.js';
+import { Renderable } from '../Components/Renderable.js';
 import { Position } from '../Components/Position.js';
 import { Scale } from '../Components/Scale.js';
 import { Shape } from '../Components/Shape.js';
 import { Collider } from '../Components/Collider.js';
 import { NodeType } from '../Components/NodeType.js';
-import { Hover } from '../Components/Hover.js';
+import { ShapeType } from '../Components/ShapeType.js';
 import { Edge } from '../Components/Edge.js';
 import { Edges } from '../Components/Edges.js';
 import { AStarPathFinder } from '../Components/AStarPathFinder.js';
@@ -14,42 +16,95 @@ export class GridGeneratorSystem extends System {
         super();
         this.world = world;
         this._entities = this.world.entityManager.getAllEntities();
-        this.width = typeof window !== 'undefined' ? window.innerWidth : 500;
-        this.height = typeof window !== 'undefined' ? window.innerHeight : 500;
+        this.eventDispatcher = this.world.eventDispatcher;
+
+        this.defaults = {
+            width: 500,
+            height: 500,
+            cellSize: 20,
+            margin: 1
+        };
+
+        this.width = typeof window !== 'undefined' ? window.innerWidth : this.defaults.height;
+        this.height = typeof window !== 'undefined' ? window.innerHeight : this.defaults.height;
+        this.cellSize = this.defaults.cellSize;
+        this.margin = this.defaults.margin;
     }
 
     init() {
-        const boxSize = 50;
-        const margin = 1;
+        this.initListeners();
+        this.generate(this.width, this.height, this.cellSize, this.margin);
+    }
+
+    initListeners() {
+        this.eventDispatcher.addEventListener('UIGenerateButtonOnClick', () => {
+            this.clearGenerated();
+            this.generate(this.width, this.height, this.cellSize, this.margin);
+            this.eventDispatcher.dispatchEvent('redraw');
+            this.eventDispatcher.dispatchEvent('clearPathFinder');
+        });
+
+        this.eventDispatcher.addEventListener('UICellSizeOnChange', cellSize => {
+            this.cellSize = +cellSize || this.defaults.cellSize;
+            this.eventDispatcher.dispatchEvent('onChangeCellSize', this.cellSize);
+        });
+
+        this.eventDispatcher.addEventListener('onResize', ({ width, height }) => {
+            this.width = width;
+            this.height = height;
+        });
+    }
+
+    clearGenerated() {
+        this._entities.forEach(entity => {
+            if (!entity.hasComponent(Generated)) {
+                return;
+            }
+
+            this.world.entityManager.removeEntity(entity);
+        });
+    }
+
+    generate(width, height, cellSize, margin) {
         const baseWeight = 1;
         const nodesMatrix = [];
 
-        const step = boxSize + margin;
-        const xStepsCount = this.height / step - 1;
-        const yStepsCount = this.width / step - 1;
+        const step = cellSize + margin;
+        const xStepsCount = Math.max(height / step - 1, 0);
+        const yStepsCount = Math.max(width / step - 1, 0);
+        if (!xStepsCount || !yStepsCount) {
+            return console.log('cellSize bigger than screen');
+        }
+        if (xStepsCount + yStepsCount < 2) {
+            return console.log('stepCount less than 2');
+        }
 
+        const entityIds = [];
         for (let y = 0; y < xStepsCount; y++) {
             nodesMatrix[y] = [];
             for (let x = 0; x < yStepsCount; x++) {
-                const entity = this.world.createEntity(`Entity x ${x} y ${y}`)
+                const entity = this.world.createEntity()
+                    .addComponent(Generated)
+                    .addComponent(Renderable)
                     .addComponent(Position)
                     .addComponent(Scale)
                     .addComponent(Shape)
                     .addComponent(Collider)
                     .addComponent(NodeType)
-                    .addComponent(Hover)
                     .addComponent(Edges)
                     .addComponent(AStarPathFinder);
 
                 const position = entity.getComponent(Position);
                 const scale = entity.getComponent(Scale);
                 const shape = entity.getComponent(Shape);
+                const nodeType = entity.getComponent(NodeType);
 
-                position.x = (boxSize + margin) * x;
-                position.y = (boxSize + margin) * y;
-                scale.x = boxSize;
-                scale.y = boxSize;
+                position.x = step * x;
+                position.y = step * y;
+                scale.x = cellSize;
+                scale.y = cellSize;
 
+                shape.primitive = ShapeType.BOX;
                 shape.rect = {
                     x: position.x,
                     y: position.y,
@@ -57,20 +112,26 @@ export class GridGeneratorSystem extends System {
                     height: scale.y,
                 };
 
+                nodeType.id = NodeType.FREE;
+
                 nodesMatrix[y][x] = entity;
+
+                entityIds.push(entity.id);
             }
         }
 
         // Start End Nodes
-        const entitiesCount = this._entities.length;
-        const startEntityId = GridGeneratorSystem.getRandomInteger(0, entitiesCount);
-        let endEntityId = GridGeneratorSystem.getRandomInteger(0, entitiesCount);
-        while (endEntityId == startEntityId) {
-            endEntityId = GridGeneratorSystem.getRandomInteger(0, entitiesCount);
+        const generatedEntitiesCount = entityIds.length;
+        const startEntityIdsId = GridGeneratorSystem.getRandomInteger(0, generatedEntitiesCount);
+        let endEntityIdsId = GridGeneratorSystem.getRandomInteger(0, generatedEntitiesCount);
+        while (endEntityIdsId == startEntityIdsId) {
+            endEntityIdsId = GridGeneratorSystem.getRandomInteger(0, generatedEntitiesCount);
         }
 
-        this.world.entityManager.getEntityById(startEntityId).getComponent(NodeType).id = NodeType.START;
-        this.world.entityManager.getEntityById(endEntityId).getComponent(NodeType).id = NodeType.END;
+        const startEntity = this.world.entityManager.getEntityById(entityIds[startEntityIdsId]);
+        startEntity.getComponent(NodeType).id = NodeType.START;
+        const endEntity = this.world.entityManager.getEntityById(entityIds[endEntityIdsId]);
+        endEntity.getComponent(NodeType).id = NodeType.END;
 
         // Node edges
         nodesMatrix.forEach((nodeMatrixX, y) => {
@@ -123,6 +184,8 @@ export class GridGeneratorSystem extends System {
                 }
             });
         });
+
+        this.eventDispatcher.dispatchEvent('onGridGenerate', { cellSize, margin });
     }
 
     static getRandomInteger(min, max) {

@@ -9,25 +9,65 @@ export class PathFinderSystem extends System {
         super();
         this.world = world;
         this._entities = this.world.entityManager.getAllEntities();
+        this.eventDispatcher = this.world.eventDispatcher;
 
         this.startNode = undefined;
         this.endNode = undefined;
         this.exploringEntities = [];
-        this.searchTickSteps = 1 + this._entities.length / 300;
-        this.buildPathTickSteps = 1 + this._entities.length / 300;
-        this.baseWeight = 1;
+
+        this.defaults = {
+            baseWeight: 1,
+            searchTickSteps: 5,
+            buildPathTickSteps: 2
+        };
 
         this.isEnabled = false;
     }
 
     init() {
+        this.initListeners();
+        this.initPathFinder();
+    }
+
+    initListeners() {
+        this.eventDispatcher.addEventListener('startStopPathFinder', () => {
+            this.startStop();
+        });
+        this.eventDispatcher.addEventListener('UIStartButtonOnClick', () => {
+            this.startStop();
+        });
+        this.eventDispatcher.addEventListener('clearPathFinder', () => {
+            this.clear();
+        });
+        this.eventDispatcher.addEventListener('UIClearPathFinderButtonOnClick', () => {
+            this.clear();
+        });
+        this.eventDispatcher.addEventListener('UIWeightOnChange', baseWeight => {
+            this.baseWeight = +baseWeight;
+        });
+        this.eventDispatcher.addEventListener('onGridGenerate', ({ cellSize, margin }) => {
+            this.searchTickSteps = 1 + Math.floor(this.world.entityManager.entitiesCount / 400);
+            this.buildPathTickSteps = 2;
+            this.cellSize = cellSize;
+            this.margin = margin;
+        });
+
+        // @TODO to other system
+        this.eventDispatcher.addEventListener('UIClearWallsButtonOnClick', () => {
+            this.clearWalls();
+        });
+    }
+
+    initPathFinder() {
         this.isFinded = false;
         this.lastDiscoveredPathEntity = undefined;
+        this.searchTickSteps = this.searchTickSteps || this.defaults.searchTickSteps;
+        this.buildPathTickSteps = this.buildPathTickSteps || this.defaults.buildPathTickSteps;
+        this.baseWeight = this.baseWeight ?? this.defaults.baseWeight;
 
-        for (let i = this._entities.length; i--;) { // Backward is faster
-            const entity = this.world.entityManager.getEntityById(i);
+        this._entities.forEach(entity => {
             if (!entity.hasComponent(NodeType) || !entity.hasComponent(Edges) || !entity.hasComponent(AStarPathFinder)) {
-                continue;
+                return;
             }
 
             const nodeType = entity.getComponent(NodeType);
@@ -45,11 +85,33 @@ export class PathFinderSystem extends System {
                 const aStarPathFinder = entity.getComponent(AStarPathFinder);
                 aStarPathFinder.clear();
             }
-        }
+        });
     }
 
     clear() {
-        this.init();
+        this.initPathFinder();
+    }
+
+    startStop() {
+        this.isEnabled = !this.isEnabled;
+        if (!this.isFinded && Array.isArray(this.exploringEntities) && this.exploringEntities.length == 0) {
+            this.clear();
+        }
+    }
+
+    // @TODO to other system
+    clearWalls() {
+        this._entities.forEach(entity => {
+            if (!entity.hasComponent(NodeType)) {
+                return;
+            }
+
+            const nodeType = entity.getComponent(NodeType);
+
+            if ([NodeType.WALL].includes(nodeType.id)) {
+                nodeType.id = NodeType.FREE;
+            }
+        });
     }
 
     execute() {
@@ -123,7 +185,7 @@ export class PathFinderSystem extends System {
             }
 
             const newCost = currentAStarPathFinder.cost + (this.baseWeight * edge.weight); // Distance between current node and the start (g)
-            const newHeuristic = PathFinderSystem.getDistance(position, targetPosition); // Heuristic - distance from the current node to the end node (h)
+            const newHeuristic = this.getDistance(position, targetPosition); // Heuristic - distance from the current node to the end node (h)
             const totalCost = newCost + newHeuristic; // Total cost of the node (f)
 
             if (!aStarPathFinder.cost || !aStarPathFinder.heuristic || totalCost < aStarPathFinder.totalCost) {
@@ -160,15 +222,12 @@ export class PathFinderSystem extends System {
      * @param {object} endPosition 
      * @returns {number} distanceByNodes
      */
-    static getDistance(startPosition, endPosition) {
-        // @TODO test perfomance
-        const boxSize = 50;
-        const margin = 1;
+    getDistance(startPosition, endPosition) {
         // Manhattan distance
         const pixelDistance = Math.sqrt((endPosition.x - startPosition.x) ** 2 + (endPosition.y - startPosition.y) ** 2);
         // ** .5 is analog Math.sqrt
         //const pixelDistance = ((endPosition.x - startPosition.x) ** 2 + (endPosition.y - startPosition.y) ** 2) ** .5;
-        const distanceByNodes = pixelDistance / (boxSize + margin);
+        const distanceByNodes = pixelDistance / (this.cellSize + this.margin);
         // Distance from start to end + all margins between start to end
         return distanceByNodes;
     }

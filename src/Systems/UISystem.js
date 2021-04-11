@@ -1,4 +1,5 @@
 import { System } from '../System.js';
+import { Renderable } from '../Components/Renderable.js';
 import { Position } from '../Components/Position.js';
 import { Scale } from '../Components/Scale.js';
 import { Shape } from '../Components/Shape.js';
@@ -12,7 +13,7 @@ export class UISystem extends System {
         super();
         this.world = world;
         this._entities = this.world.entityManager.getAllEntities();
-        this.eventDispatcher = this.world.entityManager.eventDispatcher;
+        this.eventDispatcher = this.world.eventDispatcher;
     }
 
     init() {
@@ -70,6 +71,7 @@ export class UISystem extends System {
         this.clearButton = this.world.entityManager.getEntityByName('UIClearButton');
         if (!this.clearButton) {
             this.clearButton = this.world.createEntity('UIClearButton')
+                .addComponent(Renderable)
                 .addComponent(Position)
                 .addComponent(Scale)
                 .addComponent(Shape)
@@ -110,10 +112,9 @@ export class UISystem extends System {
     }
 
     execute() {
-        for (let i = this._entities.length; i--;) { // Backward is faster
-            const entity = this.world.entityManager.getEntityById(i);
+        this._entities.forEach(entity => {
             if (!entity.hasComponent(UI) || !entity.hasComponent(Collider)) {
-                continue;
+                return;
             }
 
             if (entity.id == this.startButtonId) {
@@ -121,7 +122,7 @@ export class UISystem extends System {
                 if (collider.isPointerCollided && this.world.inputManager.pointer.leftButton.down) {
                     this.eventDispatcher.dispatchEvent('UIStartButtonOnClick', entity);
                 }
-                continue;
+                return;
             }
 
             if (entity.id == this.clearButtonId) {
@@ -129,9 +130,9 @@ export class UISystem extends System {
                 if (collider.isPointerCollided && this.world.inputManager.pointer.leftButton.down) {
                     this.eventDispatcher.dispatchEvent('UIClearButtonOnClick', entity);
                 }
-                continue;
+                return;
             }
-        }
+        });
     }
 
     startStopPathFinder() {

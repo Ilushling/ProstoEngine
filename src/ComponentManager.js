@@ -1,12 +1,20 @@
 export class ComponentManager {
-    constructor() {
+    constructor(world) {
+        this.world = world;
+
         this.Components = [];
         this.componentsCount = [];
         this.newComponentId = 0;
     }
 
     registerComponent(Component) {
+        if (Component._typeId != undefined) {
+            console.log('Component already registered', Component);
+            return;
+        }
+
         Component._typeId = this.newComponentId++;
+        Component.componentManager = this;
         this.Components[Component._typeId] = Component;
         this.componentsCount[Component._typeId] = 0;
     }

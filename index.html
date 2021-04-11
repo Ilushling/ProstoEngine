@@ -1,15 +1,39 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
     <title>Engine</title>
+    <link rel="stylesheet" href="ui.css">
 </head>
-<body style="background: black; color: black; margin: 0;">
+
+<body>
     <div id="wrapper">
         <div id="canvasWrapper">
             <canvas id="canvas-scene" style="position: absolute;"></canvas>
             <canvas id="canvas-ui" style="position: absolute;"></canvas>
+            <div id="ui">
+                <input id="UIStartStopButton" class="ui-button ui-button-start-stop" type="button" value="Start/Stop"
+                    onclick="engine?.world?.eventDispatcher?.dispatchEvent('UIStartButtonOnClick')" />
+                <input id="UIClearPathFinderButton" class="ui-button ui-button-clear" type="button" value="Clear PathFinder"
+                    onclick="engine?.world?.eventDispatcher?.dispatchEvent('UIClearPathFinderButtonOnClick')" />
+                <input id="UIClearWallsButton" class="ui-button ui-button-clear" type="button" value="Clear Walls"
+                    onclick="engine?.world?.eventDispatcher?.dispatchEvent('UIClearWallsButtonOnClick')" />
+
+                <span>cellSize:</span>
+                <input id="UICellSize" class="ui-input ui-cell-size" value="20" type="number"
+                    oninput="engine?.world?.eventDispatcher?.dispatchEvent('UICellSizeOnChange', value)" />
+
+                <span>weight:</span>
+                <input id="UIWeight" class="ui-input ui-weight" type="range" value="1" min="0" max="1" step="0.05"
+                    oninput="engine?.world?.eventDispatcher?.dispatchEvent('UIWeightOnChange', value);
+                        document.getElementById('weight').innerText = value" />
+                <span id="weight">1</span>
+
+                <input id="UIGenerateButton" class="ui-button ui-button-generate" type="button" value="Generate"
+                    onclick="engine?.world?.eventDispatcher?.dispatchEvent('UIGenerateButtonOnClick')" />
+            </div>
         </div>
     </div>
 </body>
@@ -18,4 +42,5 @@
     const engine = new Engine();
     window.engine = engine;
 </script>
+
 </html>

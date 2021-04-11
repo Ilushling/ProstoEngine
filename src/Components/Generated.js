@@ -1,9 +1,7 @@
 import { Component } from '../Component.js';
 
-export class Scale extends Component {
+export class Generated extends Component {
     constructor(entityId) {
         super(entityId);
-        this.x = 0;
-        this.y = 0;
     }
 }

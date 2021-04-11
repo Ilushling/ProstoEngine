@@ -13,7 +13,7 @@ export class EventDispatcher {
     }
 
     hasEventListener(eventName, listener) {
-        return this._listeners[eventName] != undefined && this._listeners[eventName].includes(listener);
+        return this._listeners[eventName] && this._listeners[eventName].includes(listener);
     }
 
     removeEventListener(eventName, listener) {
@@ -28,8 +28,8 @@ export class EventDispatcher {
 
     dispatchEvent(eventName, entity, component) {
         const listeners = this._listeners[eventName];
-        if (listeners != undefined) {
-            for (let i = 0, len = listeners.length; i < len; i++) {
+        if (listeners) {
+            for (let i = listeners.length - 1; i >= 0; i--) {
                 listeners[i](entity, component);
             }
         }

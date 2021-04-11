@@ -1,12 +1,27 @@
 import { Component } from '../Component.js';
-import { ShapeType } from './ShapeType.js';
+
 export class Shape extends Component {
-    constructor(primitive = ShapeType.BOX, color = 'white') {
-        super();
-        this.primitive = primitive;
-        this.color = color;
-        this.path2D = undefined;
-        this.rect = {};
-        this.previous = { };
+    primitive;
+    _color;
+    path2D;
+    rect = {};
+    previous = {
+        color: undefined
+    };
+
+    constructor(entityId) {
+        super(entityId);
+    }
+
+    get color() {
+        return this._color;
+    }
+
+    set color(color) {
+        if (color != this.color) {
+            this.previous.color = this.color;
+            this._color = color;
+            Shape.componentManager.world.eventDispatcher.dispatchEvent('render', this.entityId);
+        }
     }
 }

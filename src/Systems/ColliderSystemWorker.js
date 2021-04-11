@@ -1,23 +1,24 @@
 addEventListener('message', event => {
     const data = event.data;
-    const entitiesBuffer = new Uint16Array(data.entitiesBuffer);
+    const entitiesTypedArray = new Uint32Array(data.entitiesBuffer);
     const point = data.point;
     const isInterpolate = data.isInterpolate;
-    const columns = 5; // Columns from ColliderSystem
+    const cellSize = data.cellSize;
+    const columns = data.columns;
 
     if (isInterpolate) {
-        var interpolatedPointPositions = interpolatePointPositions(point);
+        var interpolatedPointPositions = interpolatePointPositions(point, cellSize);
     }
     
     const entityResult = [];
-    for (let i = 0, length = entitiesBuffer.byteLength / 2 / columns; i < length; i++) {
+    for (let i = (entitiesTypedArray.byteLength / Uint32Array.BYTES_PER_ELEMENT / columns) - 1; i >= 0; i--) {
         const entityOffset = i * columns;
-        const entityId = entitiesBuffer[entityOffset];
+        const entityId = entitiesTypedArray[entityOffset];
         const rect = {
-            x: entitiesBuffer[entityOffset + 1],
-            y: entitiesBuffer[entityOffset + 2],
-            width: entitiesBuffer[entityOffset + 3],
-            height: entitiesBuffer[entityOffset + 4],
+            x: entitiesTypedArray[entityOffset + 1],
+            y: entitiesTypedArray[entityOffset + 2],
+            width: entitiesTypedArray[entityOffset + 3],
+            height: entitiesTypedArray[entityOffset + 4],
         };
         entityResult.push(entityId);
 
@@ -25,11 +26,11 @@ addEventListener('message', event => {
         entityResult.push(isCollide);
     }
 
-    const entitiesBufferResult = new Uint16Array(entityResult).buffer;
+    const entitiesBufferResult = new Uint32Array(entityResult).buffer;
     return postMessage(entitiesBufferResult, [entitiesBufferResult]);
 });
 
-function interpolatePointPositions(point) {
+function interpolatePointPositions(point, accuracyDivider) {
     const interpolatedPointPositions = [];
 
     const distance = {
@@ -37,9 +38,9 @@ function interpolatePointPositions(point) {
         y: Math.abs(point.previous.y - point.y)
     };
 
-    const interpolateSteps = point.x == -1 || point.y == -1 ? 0 : (distance.x + distance.y) / 40;
+    const interpolateSteps = point.x == -1 || point.y == -1 ? 0 : (distance.x + distance.y) / accuracyDivider;
     
-    for (let i = 0; i <= interpolateSteps; i++) {
+    for (let i = interpolateSteps; i > 0; i--) {
         interpolatedPointPositions.push({
             x: lerp(point.previous.x, point.x, i / interpolateSteps),
             y: lerp(point.previous.y, point.y, i / interpolateSteps)
@@ -63,7 +64,8 @@ function collides(rect, point, isInterpolate = false, interpolatedPointPositions
         return false;
     }
 
-    for (const interpolatedPointPosition of interpolatedPointPositions) {
+    for (let i = interpolatedPointPositions.length - 1; i >= 0; i--) {
+        const interpolatedPointPosition = interpolatedPointPositions[i];
         isCollide = rectContains(rect, interpolatedPointPosition);
 
         if (isCollide) {
