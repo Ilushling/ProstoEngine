@@ -26,31 +26,34 @@ export class InputManager {
 
         this.isPointerInterpolate = true;
 
+        // On mobile devices "onpointer..." events don't work correct.
+        // Example: fast vertical move, handles only one first event "onpointermove" and "onpointerdown" don't work at this case
         this.context.onpointerup   = event => this.onPointerUp(event);
         this.context.onpointerdown = event => this.onPointerDown(event);
         this.context.onpointermove = event => this.onPointerMove(event);
+
+        this.context.ontouchend   = event => this.onPointerUp(event);
+        this.context.ontouchstart = event => this.onPointerDown(event);
+        this.context.ontouchmove  = event => this.onPointerMove(event);
     }
 
     onPointerUp(event) {
         event.preventDefault();
+
         this.pointerTemp.leftButton.up = true;
         this.pointerTemp.leftButton.pressed = false;
     }
 
     onPointerDown(event) {
         event.preventDefault();
+
         this.pointerTemp.leftButton.down = true;
         this.pointerTemp.leftButton.pressed = true;
-
-        if (event.pointerType == 'touch') {
-            this.pointer.previous.x = -1;
-            this.pointer.previous.y = -1;
-            this.onPointerMove(event);
-        }
     }
 
     onPointerMove(event) {
         event.preventDefault();
+
         const pointerPosition = this.getPointerPosition(event);
         this.pointerTemp.x = pointerPosition.x;
         this.pointerTemp.y = pointerPosition.y;
