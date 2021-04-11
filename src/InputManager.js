@@ -32,11 +32,13 @@ export class InputManager {
     }
 
     onPointerUp(event) {
+        event.preventDefault();
         this.pointerTemp.leftButton.up = true;
         this.pointerTemp.leftButton.pressed = false;
     }
 
     onPointerDown(event) {
+        event.preventDefault();
         this.pointerTemp.leftButton.down = true;
         this.pointerTemp.leftButton.pressed = true;
 
