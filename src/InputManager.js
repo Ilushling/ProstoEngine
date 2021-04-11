@@ -48,6 +48,7 @@ export class InputManager {
     }
 
     onPointerMove(event) {
+        event.preventDefault();
         const pointerPosition = this.getPointerPosition(event);
         this.pointerTemp.x = pointerPosition.x;
         this.pointerTemp.y = pointerPosition.y;
