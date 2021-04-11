@@ -33,7 +33,7 @@ export class InputManager {
         this.context.onpointermove = event => this.onPointerMove(event);
 
         this.context.ontouchend   = event => this.onPointerUp(event);
-        this.context.ontouchstart = event => this.onPointerDown(event);
+        this.context.ontouchstart = event => this.onPointerDown(event); // if the first movement is fast, it will not work
         this.context.ontouchmove  = event => this.onPointerMove(event);
     }
 
@@ -43,7 +43,6 @@ export class InputManager {
     }
 
     onPointerDown(event) {
-        event.preventDefault();
         this.pointerTemp.leftButton.down = true;
         this.pointerTemp.leftButton.pressed = true;
 
@@ -55,11 +54,7 @@ export class InputManager {
     }
 
     onPointerMove(event) {
-        event.preventDefault();
-
-        //console.log(event);
         const pointerPosition = this.getPointerPosition(event);
-        //console.log(pointerPosition);
         this.pointerTemp.x = pointerPosition.x;
         this.pointerTemp.y = pointerPosition.y;
     }
