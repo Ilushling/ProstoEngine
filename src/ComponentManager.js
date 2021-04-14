@@ -1,6 +1,7 @@
 export class ComponentManager {
     constructor(world) {
         this.world = world;
+        this.eventDispatcher = this.world.eventDispatcher;
 
         this.Components = [];
         this.componentsCount = [];
@@ -23,11 +24,13 @@ export class ComponentManager {
         return this.Components.includes(Component);
     }
 
-    onEntityAddComponent(Component) {
+    onEntityAddComponent(entity, Component) {
+        this.eventDispatcher.dispatchEvent('onEntityAddComponent', entity.id);
         this.componentsCount[Component._typeId]++;
     }
 
-    onEntityRemoveComponent(Component) {
+    onEntityRemoveComponent(entity, Component) {
+        this.eventDispatcher.dispatchEvent('onEntityRemoveComponent', entity.id);
         this.componentsCount[Component._typeId]--;
     }
 

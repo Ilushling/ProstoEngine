@@ -20,10 +20,12 @@ addEventListener('message', event => {
             width: entitiesTypedArray[entityOffset + 3],
             height: entitiesTypedArray[entityOffset + 4],
         };
-        entityResult.push(entityId);
 
         const isCollide = collides(rect, point, isInterpolate, interpolatedPointPositions);
-        entityResult.push(isCollide);
+        if (isCollide) {
+            entityResult.push(entityId);
+            entityResult.push(isCollide);
+        }
     }
 
     const entitiesBufferResult = new Uint32Array(entityResult).buffer;
@@ -41,9 +43,10 @@ function interpolatePointPositions(point, accuracyDivider) {
     const interpolateSteps = point.x == -1 || point.y == -1 ? 0 : (distance.x + distance.y) / accuracyDivider;
     
     for (let i = interpolateSteps; i > 0; i--) {
+        const step = i / interpolateSteps;
         interpolatedPointPositions.push({
-            x: lerp(point.previous.x, point.x, i / interpolateSteps),
-            y: lerp(point.previous.y, point.y, i / interpolateSteps)
+            x: lerp(point.previous.x, point.x, step),
+            y: lerp(point.previous.y, point.y, step)
         });
     }
 

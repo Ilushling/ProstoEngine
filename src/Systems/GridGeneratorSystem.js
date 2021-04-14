@@ -97,6 +97,7 @@ export class GridGeneratorSystem extends System {
                 const position = entity.getComponent(Position);
                 const scale = entity.getComponent(Scale);
                 const shape = entity.getComponent(Shape);
+                const collider = entity.getComponent(Collider);
                 const nodeType = entity.getComponent(NodeType);
 
                 position.x = step * x;
@@ -106,6 +107,13 @@ export class GridGeneratorSystem extends System {
 
                 shape.primitive = ShapeType.BOX;
                 shape.rect = {
+                    x: position.x,
+                    y: position.y,
+                    width: scale.x,
+                    height: scale.y,
+                };
+
+                collider.rect = {
                     x: position.x,
                     y: position.y,
                     width: scale.x,
@@ -143,9 +151,9 @@ export class GridGeneratorSystem extends System {
                 const down  = nodesMatrix[y + 1]    ? nodesMatrix[y + 1][x] : undefined;
                 const right = nodesMatrix[y][x + 1];
 
-                const upLeft  = nodesMatrix[y - 1]    ? nodesMatrix[y - 1][x - 1] : undefined;
-                const downLeft  = nodesMatrix[y + 1]  ? nodesMatrix[y + 1][x - 1] : undefined;
-                const upRight = nodesMatrix[y - 1]    ? nodesMatrix[y - 1][x + 1] : undefined;
+                const upLeft     = nodesMatrix[y - 1] ? nodesMatrix[y - 1][x - 1] : undefined;
+                const downLeft   = nodesMatrix[y + 1] ? nodesMatrix[y + 1][x - 1] : undefined;
+                const upRight    = nodesMatrix[y - 1] ? nodesMatrix[y - 1][x + 1] : undefined;
                 const downRight  = nodesMatrix[y + 1] ? nodesMatrix[y + 1][x + 1] : undefined;
 
                 if (up) {
@@ -185,7 +193,7 @@ export class GridGeneratorSystem extends System {
             });
         });
 
-        this.eventDispatcher.dispatchEvent('onGridGenerate', { cellSize, margin });
+        this.eventDispatcher.dispatchEvent('onGridGenerate', { cellSize, margin, generatedEntitiesCount });
     }
 
     static getRandomInteger(min, max) {

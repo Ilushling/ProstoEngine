@@ -3,7 +3,8 @@ import { Entity } from './Entity.js';
 export class EntityManager {
     constructor(world) {
         this.world = world;
-        this.componentManager = world.componentManager;
+        this.componentManager = this.world.componentManager;
+        this.eventDispatcher = this.world.eventDispatcher;
 
         this._entities = new Map();
         this._entitiesByName = new Map();
@@ -25,6 +26,8 @@ export class EntityManager {
         }
         this._entities.set(this.newEntityId, entity);
 
+        this.eventDispatcher.dispatchEvent('onCreateEntity', this.newEntityId);
+
         this.newEntityId++;
         this.entitiesCount++;
 
@@ -38,6 +41,8 @@ export class EntityManager {
         if (entity.hasOwnProperty('name') && this._entitiesByName.has(entity.name)) {
             this._entitiesByName.delete(entity.name);
         }
+
+        this.eventDispatcher.dispatchEvent('onRemoveEntity', entity.id);
 
         this.entitiesCount--;
     }
@@ -54,16 +59,16 @@ export class EntityManager {
         }
         entity._ComponentsTypes.push(Component);
         entity._components[Component._typeId] = new Component(entity.id);
-        this.componentManager.onEntityAddComponent(Component);
+        this.componentManager.onEntityAddComponent(entity, Component);
     }
 
     entityRemoveComponent(entity, Component) {
         delete entity._components[Component._typeId];
 
         const index = entity._ComponentsTypes.indexOf(Component);
-        entity._ComponentsTypes.slice(index, 1);
+        entity._ComponentsTypes.splice(index, 1);
 
-        this.componentManager.onEntityRemoveComponent(Component);
+        this.componentManager.onEntityRemoveComponent(entity, Component);
     }
 
     entityRemoveAllComponents(entity) {

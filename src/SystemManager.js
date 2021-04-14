@@ -74,9 +74,20 @@ export class SystemManager {
         }
     }
 
+    async afterExecuteSystem(system, deltaTime) {
+        if (system.canExecute() && typeof system.afterExecute === 'function') {
+            const startTime = Date.now();
+            await system.afterExecute(deltaTime);
+            system.executeTime = Date.now() - startTime;
+        }
+    }
+
     async execute(deltaTime) {
         for (let i = 0, len = this._executeSystems.length; i < len; i++) {
             await this.executeSystem(this._executeSystems[i], deltaTime);
+        }
+        for (let i = 0, len = this._executeSystems.length; i < len; i++) {
+            await this.afterExecuteSystem(this._executeSystems[i], deltaTime);
         }
     }
 

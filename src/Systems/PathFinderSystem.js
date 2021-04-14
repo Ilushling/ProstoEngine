@@ -46,7 +46,8 @@ export class PathFinderSystem extends System {
             this.baseWeight = +baseWeight;
         });
         this.eventDispatcher.addEventListener('onGridGenerate', ({ cellSize, margin }) => {
-            this.searchTickSteps = 1 + Math.floor(this.world.entityManager.entitiesCount / 400);
+            this.searchTickSteps = this.world.entityManager.entitiesCount / 400;
+            this.searchTickSteps = 1 + (this.searchTickSteps | this.searchTickSteps); // | - is fater than Math.floor analog
             this.buildPathTickSteps = 2;
             this.cellSize = cellSize;
             this.margin = margin;

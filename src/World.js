@@ -8,11 +8,11 @@ export class World {
     constructor(engine) {
         this.engine = engine;
 
+        this.eventDispatcher = new EventDispatcher();
         this.componentManager = new ComponentManager(this);
         this.entityManager = new EntityManager(this);
         this.systemManager = new SystemManager(this);
         this.inputManager = new InputManager(this);
-        this.eventDispatcher = new EventDispatcher();
 
         this.start();
     }
