@@ -113,6 +113,7 @@ export class GridGeneratorSystem extends System {
                     height: scale.y,
                 };
 
+                collider.primitive = ShapeType.BOX;
                 collider.rect = {
                     x: position.x,
                     y: position.y,

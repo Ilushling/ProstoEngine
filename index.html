@@ -18,12 +18,15 @@
                 <input id="UIClearPathFinderButton" class="ui-button ui-button-clear" type="button" value="Clear PathFinder" />
                 <input id="UIClearWallsButton" class="ui-button ui-button-clear" type="button" value="Clear Walls" />
 
-                <span>cellSize:</span>
-                <input id="UICellSize" class="ui-input ui-cell-size" value="20" type="number" />
-
                 <span>weight:</span>
                 <input id="UIWeight" class="ui-input ui-weight" type="range" value="1" min="0" max="1" step="0.05" />
                 <span id="weight">1</span>
+
+                <span>workersCount:</span>
+                <input id="UIWorkersCount" class="ui-input" type="number" value="4"/>
+
+                <span>cellSize:</span>
+                <input id="UICellSize" class="ui-input ui-cell-size" value="20" type="number" />
 
                 <input id="UIGenerateButton" class="ui-button ui-button-generate" type="button" value="Generate" />
 
@@ -45,14 +48,16 @@
     document.getElementById('UIClearPathFinderButton').onclick = event => eventDispatcher.dispatchEvent('UIClearPathFinderButtonOnClick');
     document.getElementById('UIClearWallsButton').onclick      = event => eventDispatcher.dispatchEvent('UIClearWallsButtonOnClick');
 
-    document.getElementById('UICellSize').oninput              = event => eventDispatcher.dispatchEvent('UICellSizeOnChange', event.srcElement.value);
-
     document.getElementById('UIWeight').oninput                = event => {
         eventDispatcher.dispatchEvent('UIWeightOnChange', event.srcElement.value);
         document.getElementById('weight').innerText = event.srcElement.value
     };
 
-    document.getElementById('UIGenerateButton').onclick      = event => eventDispatcher.dispatchEvent('UIGenerateButtonOnClick');
+    document.getElementById('UIWorkersCount').oninput          = event => eventDispatcher.dispatchEvent('UIWorkersCountOnChange', event.srcElement.value);
+
+    document.getElementById('UICellSize').oninput              = event => eventDispatcher.dispatchEvent('UICellSizeOnChange', event.srcElement.value);
+
+    document.getElementById('UIGenerateButton').onclick        = event => eventDispatcher.dispatchEvent('UIGenerateButtonOnClick');
 
     eventDispatcher.addEventListener('onGridGenerate', ({ generatedEntitiesCount }) => document.getElementById('entitiesCount').value = generatedEntitiesCount);
 </script>

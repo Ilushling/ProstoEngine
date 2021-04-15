@@ -10,8 +10,9 @@ addEventListener('message', event => {
         var interpolatedPointPositions = interpolatePointPositions(point, cellSize);
     }
     
-    const entityResult = [];
-    for (let i = (entitiesTypedArray.byteLength / Uint32Array.BYTES_PER_ELEMENT / columns) - 1; i >= 0; i--) {
+    const entitiesCount = entitiesTypedArray.length / columns;
+    const entitiesTypedArrayResult = [];
+    for (let i = entitiesCount; i--;) {
         const entityOffset = i * columns;
         const entityId = entitiesTypedArray[entityOffset];
         const rect = {
@@ -23,12 +24,11 @@ addEventListener('message', event => {
 
         const isCollide = collides(rect, point, isInterpolate, interpolatedPointPositions);
         if (isCollide) {
-            entityResult.push(entityId);
-            entityResult.push(isCollide);
+            entitiesTypedArrayResult.push(entityId, isCollide);
         }
     }
 
-    const entitiesBufferResult = new Uint32Array(entityResult).buffer;
+    const entitiesBufferResult = new Uint32Array(entitiesTypedArrayResult).buffer;
     return postMessage(entitiesBufferResult, [entitiesBufferResult]);
 });
 
@@ -40,9 +40,9 @@ function interpolatePointPositions(point, accuracyDivider) {
         y: Math.abs(point.previous.y - point.y)
     };
 
-    const interpolateSteps = point.x == -1 || point.y == -1 ? 0 : (distance.x + distance.y) / accuracyDivider;
+    const interpolateSteps = point.x == -1 || point.y == -1 ? 0 : ~~((distance.x + distance.y) / accuracyDivider); // ~~ is faster analog Math.floor
     
-    for (let i = interpolateSteps; i > 0; i--) {
+    for (let i = interpolateSteps; i--;) {
         const step = i / interpolateSteps;
         interpolatedPointPositions.push({
             x: lerp(point.previous.x, point.x, step),
@@ -67,7 +67,7 @@ function collides(rect, point, isInterpolate = false, interpolatedPointPositions
         return false;
     }
 
-    for (let i = interpolatedPointPositions.length - 1; i >= 0; i--) {
+    for (let i = interpolatedPointPositions.length; i--;) {
         const interpolatedPointPosition = interpolatedPointPositions[i];
         isCollide = rectContains(rect, interpolatedPointPosition);
 

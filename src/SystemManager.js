@@ -13,6 +13,7 @@ export class SystemManager {
         if (typeof system.execute == 'function') {
             this._executeSystems.push(system);
         }
+        this.systemsCount++;
 
         return this;
     }
@@ -26,6 +27,8 @@ export class SystemManager {
         this._systems.splice(this._systems.indexOf(system), 1);
     
         system.unregister();
+
+        this.systemsCount--;
 
         return this;
     }

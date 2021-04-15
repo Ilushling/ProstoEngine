@@ -72,7 +72,7 @@ export class EntityManager {
     }
 
     entityRemoveAllComponents(entity) {
-        for (let i = entity._ComponentsTypes.length - 1; i > 0; i--) { // Backward is faster
+        for (let i = entity._ComponentsTypes.length; i--;) { // Backward is faster
             const Component = entity._ComponentsTypes[i];
             this.entityRemoveComponent(entity, Component);
         }

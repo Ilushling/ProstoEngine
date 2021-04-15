@@ -17,53 +17,23 @@ export class ColliderSystem extends System {
 
         this.isEnableHoverCollider = true;
         this.defaults = {
-            cellSize: 20
+            cellSize: 20,
+            workersCount: 4
         };
         // Need subtract from original value for more accuracy interpolation
         this.cellSize = Math.ceil(this.defaults.cellSize - (this.defaults.cellSize / 4)) || this.defaults.cellSize;
+        this.workersCount = this.workersCount ?? this.defaults.workersCount;
+
+        this.isWorkerEntityUpdate = true;
+        this.entitiesToCheckCollideInWorker = [];
+        this.entitiesToCheckCollide = [];
+        this.hoveredEntitesLastFrame = [];
     }
 
     init() {
         this.initListeners();
         this.initCanvas();
-
-        this.workersCount = 4;
-        this.workersResolvedCount = 0;
-        this.workers = [];
-        this.hoveredEntitesLastFrame = [];
-        this.isWorkerEntityUpdate = true;
-        this.entitiesToCheckCollideInWorker = [];
-        this.entitiesToCheckCollide = [];
-        for (let i = this.workersCount - 1; i >= 0; i--) {
-            const worker = new Worker('src/Systems/ColliderSystemWorker.js', { type: 'module' });
-            this.workers.push(worker);
-
-            const columns = 2; // Columns from ColliderSystemWorker
-            worker.onmessage = event => {
-                const entitiesTypedArray = new Uint32Array(event.data);
-                for (let j = entitiesTypedArray.length - columns; j >= 0; j -= columns) {
-                    const entityOffset = j;
-                    const entityId = entitiesTypedArray[entityOffset];
-                    const isCollide = entitiesTypedArray[entityOffset + 1];
-
-                    const entity = this.entityManager.getEntityById(entityId);
-                    if (!entity || !entity.hasComponent(Collider)) {
-                        continue;
-                    }
-
-                    const collider = entity.getComponent(Collider);
-                    collider.isPointerCollided = isCollide;
-
-                    this.hoveredEntitesLastFrame.push(entity);
-                }
-
-                this.workersResolvedCount++;
-                if (this.workersResolvedCount == this.workersCount) {
-                    this.workersResolvedCount = 0;
-                    this.resolveSystemPromise();
-                }
-            };
-        }
+        this.initWorkers();
     }
 
     initListeners() {
@@ -72,6 +42,11 @@ export class ColliderSystem extends System {
             this.cellSize = Math.ceil(cellSize - (cellSize / 4)) 
                 || Math.ceil(this.defaults.cellSize - (this.defaults.cellSize / 4)) 
                 || this.defaults.cellSize;
+        });
+        this.eventDispatcher.addEventListener('UIWorkersCountOnChange', workersCount => {
+            this.workersCount = Math.abs(+workersCount) ?? this.defaults.workersCount;
+            this.resolveSystemPromise();
+            this.initWorkers();
         });
 
         this.eventDispatcher.addEventListener('onCreateEntity', () => {
@@ -91,9 +66,59 @@ export class ColliderSystem extends System {
         }
     }
 
+    initWorkers() {
+        if (Array.isArray(this.workers)) {
+            this.terminateWorkers(this.workers);
+        }
+        this.workers = [];
+
+        this.workersResolvedCount = 0;
+        if (Array.isArray(this.hoveredEntitesLastFrame) && this.hoveredEntitesLastFrame.length) {
+            this.clearHover();
+        }
+        for (let i = this.workersCount; i--;) {
+            const worker = new Worker('src/Systems/ColliderSystemWorker.js', { type: 'module' });
+            this.workers.push(worker);
+
+            const columns = 2; // Columns from ColliderSystemWorker
+            worker.onmessage = event => {
+                const entitiesTypedArray = new Uint32Array(event.data);
+                for (let j = entitiesTypedArray.length - columns; j >= 0; j -= columns) {
+                    const entityOffset = j;
+                    const entityId = entitiesTypedArray[entityOffset];
+                    const isCollide = entitiesTypedArray[entityOffset + 1];
+
+                    const entity = this.entityManager.getEntityById(entityId);
+                    if (!entity || !entity.hasComponent(Collider)) {
+                        continue;
+                    }
+
+                    const collider = entity.getComponent(Collider);
+                    collider.isPointerCollided = isCollide;
+
+                    // if isCollide == true
+                    this.hoveredEntitesLastFrame.push(entity);
+                }
+
+                this.workersResolvedCount++;
+                if (this.workersResolvedCount == this.workersCount) {
+                    this.workersResolvedCount = 0;
+                    this.resolveSystemPromise();
+                }
+            };
+        }
+    }
+
+    terminateWorkers(workers) {
+        for (let i = workers.length; i--;) {
+            const worker = workers[i];
+            worker.terminate();
+        }
+    }
+
     clearHover() {
-        let entity;
-        while (entity = this.hoveredEntitesLastFrame.pop()) {
+        for (let i = this.hoveredEntitesLastFrame.length; i--;) {
+            const entity = this.hoveredEntitesLastFrame[i];
             if (!entity.hasComponent(Collider)) {
                 return;
             }
@@ -101,6 +126,7 @@ export class ColliderSystem extends System {
             const collider = entity.getComponent(Collider);
             collider.isPointerCollided = false;
         }
+        this.hoveredEntitesLastFrame = [];
     }
 
     execute() {
@@ -138,16 +164,20 @@ export class ColliderSystem extends System {
                 const collider = entity.getComponent(Collider);
                 const shape = entity.getComponent(Shape);
 
-                if (shape.primitive == ShapeType.BOX) {
-                    collider.isPointerCollided = ColliderSystem.collides(
+                if (collider.primitive == ShapeType.BOX) {
+                    const isCollide = ColliderSystem.collides(
                         collider.rect, 
                         point, 
                         isInterpolate, 
                         interpolatedPointPositions
                     );
+                    if (isCollide) {
+                        collider.isPointerCollided = isCollide;
+                        this.hoveredEntitesLastFrame.push(entity);
+                    }
                 } else {
                     if (!this.canvas) {
-                        initCanvas();
+                        this.initCanvas();
                     }
 
                     if (!this.canvas) {
@@ -158,7 +188,11 @@ export class ColliderSystem extends System {
                         return console.log('shape.path2D not found');
                     }
 
-                    collider.isPointerCollided = this.collides2D(shape.path2D, point, isInterpolate, interpolatedPointPositions);
+                    const isCollide = this.collides2D(shape.path2D, point, isInterpolate, interpolatedPointPositions);
+                    if (isCollide) {
+                        collider.isPointerCollided = isCollide;
+                        this.hoveredEntitesLastFrame.push(entity);
+                    }
                 }
             });
 
@@ -180,15 +214,14 @@ export class ColliderSystem extends System {
             y: Math.abs(point.previous.y - point.y)
         };
     
-        const interpolateSteps = (distance.x + distance.y) / accuracyDivider;
+        const interpolateSteps = point.x == -1 || point.y == -1 ? 0 : ~~((distance.x + distance.y) / accuracyDivider); // ~~ is faster analog Math.floor
         
-        for (let i = interpolateSteps; i > 0; i--) {
+        for (let i = interpolateSteps; i--;) {
             const step = i / interpolateSteps;
-            const lerpPoint = {
+            interpolatedPointPositions.push({
                 x: ColliderSystem.lerp(point.previous.x, point.x, step),
                 y: ColliderSystem.lerp(point.previous.y, point.y, step)
-            };
-            interpolatedPointPositions.push(lerpPoint);
+            });
         }
     
         return interpolatedPointPositions;
@@ -208,7 +241,7 @@ export class ColliderSystem extends System {
             return false;
         }
 
-        for (let i = interpolatedPointPositions.length - 1; i >= 0; i--) {
+        for (let i = interpolatedPointPositions.length; i--;) {
             const interpolatedPointPosition = interpolatedPointPositions[i];
             isCollide = this.ctx.isPointInPath(path2D, interpolatedPointPosition);
     
@@ -230,7 +263,7 @@ export class ColliderSystem extends System {
             return false;
         }
     
-        for (let i = interpolatedPointPositions.length - 1; i >= 0; i--) {
+        for (let i = interpolatedPointPositions.length; i--;) {
             const interpolatedPointPosition = interpolatedPointPositions[i];
             isCollide = this.rectContains(rect, interpolatedPointPosition);
     
@@ -291,14 +324,14 @@ export class ColliderSystem extends System {
         if (this.isWorkerEntityUpdate) {
             this.entitiesTypedArray = new Uint32Array(this.entitiesToCheckCollideInWorker);
         }
-        for (let i = workersCount - 1; i >= 0; i--) {
+        for (let i = workersCount; i--;) {
             const worker = workers[i];
             if (!worker) {
                 return;
             }
 
             const start = entitiesToWorkerCount * i;
-            const limit = start + entitiesToWorkerCount + (i == workersCount - 1 ? remain * workersCount : 0);
+            const limit = start + entitiesToWorkerCount + (i == workersCount ? remain * workersCount : 0);
 
             const entitiesBuffer = this.entitiesTypedArray.slice(start, limit).buffer;
 
