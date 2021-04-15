@@ -1,10 +1,8 @@
 import { Canvas } from '../Components/Canvas.js';
 import { Collider } from '../Components/Collider.js';
+import { ColliderType } from '../Components/ColliderType.js';
 import { Shape } from '../Components/Shape.js';
-import { Position } from '../Components/Position.js';
-import { Scale } from '../Components/Scale.js';
 import { System } from '../System.js';
-import { ShapeType } from '../Components/ShapeType.js';
 
 export class ColliderSystem extends System {
     constructor(world) {
@@ -157,14 +155,13 @@ export class ColliderSystem extends System {
             }
 
             entitiesToCheckCollide.forEach(entity => {
-                if (!entity.hasComponent(Collider) || !entity.hasComponent(Shape)) {
+                if (!entity.hasComponent(Collider)) {
                     return;
                 }
 
                 const collider = entity.getComponent(Collider);
-                const shape = entity.getComponent(Shape);
 
-                if (collider.primitive == ShapeType.BOX) {
+                if (collider.primitive == ColliderType.BOX) {
                     const isCollide = ColliderSystem.collides(
                         collider.rect, 
                         point, 
@@ -183,6 +180,12 @@ export class ColliderSystem extends System {
                     if (!this.canvas) {
                         return console.log('canvas not found');
                     }
+
+                    if (!entity.hasComponent(Shape)) {
+                        return;
+                    }
+
+                    const shape = entity.getComponent(Shape);
 
                     if (!shape.path2D) {
                         return console.log('shape.path2D not found');
@@ -276,10 +279,8 @@ export class ColliderSystem extends System {
     }
 
     static rectContains(rect, point) {
-        return rect.x  <= point.x && 
-               point.x <= rect.x + rect.width && 
-               rect.y  <= point.y && 
-               point.y <= rect.y + rect.height;
+        return (point.x > rect.x && point.x < rect.widthX) && 
+               (point.y > rect.y && point.y < rect.heightY);
     }
 
     workersHandle(workers, entities, point, isInterpolate, cellSize) {
@@ -290,23 +291,22 @@ export class ColliderSystem extends System {
             this.entitiesToCheckCollideInWorker = [];
             this.entitiesToCheckCollide = [];
             entities.forEach(entity => {
-                if (!entity.hasComponent(Collider) || !entity.hasComponent(Shape) || !entity.hasComponent(Position) || !entity.hasComponent(Scale)) {
+                if (!entity.hasComponent(Collider)) {
                     return;
                 }
 
-                const shape = entity.getComponent(Shape);
-                const position = entity.getComponent(Position);
-                const scale = entity.getComponent(Scale);
+                const collider = entity.getComponent(Collider);
 
                 // Fast check collision in Web Worker
-                if (shape.primitive == ShapeType.BOX) {
+                if (collider.primitive == ColliderType.BOX) {
                     // 5 columns
+                    const rect = collider.rect;
                     this.entitiesToCheckCollideInWorker.push(
                         entity.id,
-                        position.x, 
-                        position.y, 
-                        scale.x, 
-                        scale.y
+                        rect.x, 
+                        rect.y, 
+                        rect.widthX, 
+                        rect.heightY
                     );
 
                     return;

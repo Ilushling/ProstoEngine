@@ -5,6 +5,7 @@ import { Position } from '../Components/Position.js';
 import { Scale } from '../Components/Scale.js';
 import { Shape } from '../Components/Shape.js';
 import { Collider } from '../Components/Collider.js';
+import { ColliderType } from '../Components/ColliderType.js';
 import { NodeType } from '../Components/NodeType.js';
 import { ShapeType } from '../Components/ShapeType.js';
 import { Edge } from '../Components/Edge.js';
@@ -113,7 +114,7 @@ export class GridGeneratorSystem extends System {
                     height: scale.y,
                 };
 
-                collider.primitive = ShapeType.BOX;
+                collider.primitive = ColliderType.BOX;
                 collider.rect = {
                     x: position.x,
                     y: position.y,

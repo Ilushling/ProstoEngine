@@ -18,8 +18,8 @@ addEventListener('message', event => {
         const rect = {
             x: entitiesTypedArray[entityOffset + 1],
             y: entitiesTypedArray[entityOffset + 2],
-            width: entitiesTypedArray[entityOffset + 3],
-            height: entitiesTypedArray[entityOffset + 4],
+            widthX: entitiesTypedArray[entityOffset + 3],
+            heightY: entitiesTypedArray[entityOffset + 4],
         };
 
         const isCollide = collides(rect, point, isInterpolate, interpolatedPointPositions);
@@ -80,8 +80,6 @@ function collides(rect, point, isInterpolate = false, interpolatedPointPositions
 }
 
 function rectContains(rect, point) {
-    return rect.x  <= point.x && 
-           point.x <= rect.x + rect.width && 
-           rect.y  <= point.y && 
-           point.y <= rect.y + rect.height;
+    return (point.x > rect.x && point.x < rect.widthX) && 
+           (point.y > rect.y && point.y < rect.heightY);
 }

@@ -4,6 +4,7 @@ import { Scale } from './Components/Scale.js';
 import { Shape } from './Components/Shape.js';
 import { Canvas } from './Components/Canvas.js';
 import { Collider } from './Components/Collider.js';
+import { ColliderType } from './Components/ColliderType.js';
 import { NodeType } from './Components/NodeType.js';
 import { Edge } from './Components/Edge.js';
 import { Edges } from './Components/Edges.js';
@@ -28,6 +29,7 @@ export class Engine {
             .registerComponent(Scale)
             .registerComponent(Shape)
             .registerComponent(Collider)
+            .registerComponent(ColliderType)
             .registerComponent(NodeType)
             .registerComponent(Edge)
             .registerComponent(Edges)
