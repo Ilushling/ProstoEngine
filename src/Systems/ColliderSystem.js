@@ -254,7 +254,6 @@ export class ColliderSystem extends System {
         const columns = 5;
         // Prepare entities for check collision in worker
         if (this.isWorkerEntityUpdate) {
-            this.isWorkerEntityUpdate = false;
             this.entitiesToCheckCollideInWorker = [];
             this.entitiesToCheckCollide = [];
             entities.forEach(entity => {
@@ -289,7 +288,9 @@ export class ColliderSystem extends System {
         const entitiesCount = this.entitiesToCheckCollideInWorker.length;
         const remain = entitiesCount / workersCount % columns;
         const entitiesToWorkerCount = entitiesCount / workersCount - remain;
-        let entitiesTypedArray = new Uint32Array(this.entitiesToCheckCollideInWorker);
+        if (this.isWorkerEntityUpdate) {
+            this.entitiesTypedArray = new Uint32Array(this.entitiesToCheckCollideInWorker);
+        }
         for (let i = workersCount - 1; i >= 0; i--) {
             const worker = workers[i];
             if (!worker) {
@@ -299,7 +300,7 @@ export class ColliderSystem extends System {
             const start = entitiesToWorkerCount * i;
             const limit = start + entitiesToWorkerCount + (i == workersCount - 1 ? remain * workersCount : 0);
 
-            const entitiesBuffer = entitiesTypedArray.slice(start, limit).buffer;
+            const entitiesBuffer = this.entitiesTypedArray.slice(start, limit).buffer;
 
             worker.postMessage({
                 point,
@@ -310,6 +311,8 @@ export class ColliderSystem extends System {
                 entitiesBuffer
             }, [entitiesBuffer]);
         }
+
+        this.isWorkerEntityUpdate = false;
 
         return this.entitiesToCheckCollide;
     }
