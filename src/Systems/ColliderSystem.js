@@ -367,7 +367,7 @@ export class ColliderSystem extends System {
             }
 
             const start = entitiesToWorkerCount * i;
-            const limit = start + entitiesToWorkerCount + (i == workersCount ? remain * workersCount : 0);
+            const limit = start + entitiesToWorkerCount + (i == workersCount - 1 ? remain * workersCount : 0);
 
             const entitiesBuffer = this.entitiesTypedArray.slice(start, limit).buffer;
 
