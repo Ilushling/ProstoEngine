@@ -1,6 +1,8 @@
 import { Canvas } from '../Components/Canvas.js';
 import { Collider } from '../Components/Collider.js';
 import { ColliderType } from '../Components/ColliderType.js';
+import { Position } from '../Components/Position.js';
+import { Scale } from '../Components/Scale.js';
 import { Shape } from '../Components/Shape.js';
 import { System } from '../System.js';
 
@@ -52,6 +54,40 @@ export class ColliderSystem extends System {
         });
         this.eventDispatcher.addEventListener('onRemoveEntity', () => {
             this.isWorkerEntityUpdate = true;
+        });
+
+        this.eventDispatcher.addEventListener('onPositionChange', entityId => {
+            const entity = this.entityManager.getEntityById(entityId);
+            if (!entity || !entity.hasComponent(Collider) || !entity.hasComponent(Position) || !entity.hasComponent(Scale)) {
+                return;
+            }
+
+            const collider = entity.getComponent(Collider);
+            const position = entity.getComponent(Position);
+            const scale = entity.getComponent(Scale);
+
+            const rect = collider.rect;
+            rect.x = position.x;
+            rect.y = position.y;
+            rect.width = scale.y;
+            rect.height = scale.y;
+        });
+
+        this.eventDispatcher.addEventListener('onScaleChange', entityId => {
+            const entity = this.entityManager.getEntityById(entityId);
+            if (!entity || !entity.hasComponent(Collider) || !entity.hasComponent(Position) || !entity.hasComponent(Scale)) {
+                return;
+            }
+
+            const collider = entity.getComponent(Collider);
+            const position = entity.getComponent(Position);
+            const scale = entity.getComponent(Scale);
+
+            const rect = collider.rect;
+            rect.x = position.x;
+            rect.y = position.y;
+            rect.width = scale.y;
+            rect.height = scale.y;
         });
     }
 

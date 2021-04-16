@@ -6,7 +6,6 @@ import { Canvas } from './Components/Canvas.js';
 import { Collider } from './Components/Collider.js';
 import { ColliderType } from './Components/ColliderType.js';
 import { NodeType } from './Components/NodeType.js';
-import { Edge } from './Components/Edge.js';
 import { Edges } from './Components/Edges.js';
 import { AStarPathFinder } from './Components/AStarPathFinder.js';
 import { UI } from './Components/UI.js';
@@ -16,13 +15,15 @@ import { GridGeneratorSystem } from './Systems/GridGeneratorSystem.js';
 import { CanvasRendererSystem } from './Systems/CanvasRendererSystem.js';
 import { ColliderSystem } from './Systems/ColliderSystem.js';
 import { ShapeSystem } from './Systems/ShapeSystem.js';
-import { InputSystem } from './Systems/InputSystem.js';
 import { PathFinderSystem } from './Systems/PathFinderSystem.js';
-import { UISystem } from './Systems/UISystem.js';
 
 export class Engine {
     constructor() {
+        this.deltaTime = 0;
         this.lastTimeStamp = 0;
+        this.handleTime = 0;
+        this.logs = [];
+
         this.world = new World(this);
 
         this.world.registerComponent(Position)
@@ -31,20 +32,17 @@ export class Engine {
             .registerComponent(Collider)
             .registerComponent(ColliderType)
             .registerComponent(NodeType)
-            .registerComponent(Edge)
             .registerComponent(Edges)
             .registerComponent(Canvas)
             .registerComponent(Renderable)
             .registerComponent(UI)
             .registerComponent(AStarPathFinder)
             .registerComponent(Generated)
-            //.registerSystem(InputSystem)
             .registerSystem(ColliderSystem)
             .registerSystem(PathFinderSystem)
             .registerSystem(ShapeSystem)
             .registerSystem(GridGeneratorSystem)
             .registerSystem(CanvasRendererSystem)
-            //.registerSystem(UISystem)
 
         this.init();
 
@@ -52,16 +50,49 @@ export class Engine {
     }
 
     async loop(timeStamp = 0) {
-        this.deltaTime = Math.min(timeStamp - this.lastTimeStamp, 100) / 1000;
+        this.deltaTime = Math.min(timeStamp - this.lastTimeStamp, 1000) / 1000;
+        const startHandleTime = Date.now();
 
         await this.world.execute(this.deltaTime);
 
+        this.handleTime = (Date.now() - startHandleTime) / 1000;
         this.lastTimeStamp = timeStamp;
+
+        this.log(this.handleTime, this.deltaTime);
 
         this.requestAnimationFrameID = requestAnimationFrame(newTimeStamp => this.loop(newTimeStamp));
     }
 
     init() {
         this.world.systemManager.initSystems();
+    }
+
+    log(handleTime, deltaTime) {
+        //this.logs.push({
+        //    handleTime,
+        //    deltaTime
+        //});
+
+        this.logUpdate(handleTime, deltaTime);
+    }
+
+    logUpdate(handleTime, deltaTime) {
+        const handleTimeElement = this.handleTimeElement;
+        if (!handleTimeElement) {
+            this.handleTimeElement = document.getElementById('handleTime');
+        }
+
+        if (handleTimeElement) {
+            handleTimeElement.innerText = ~~(handleTime * 1000);
+        }
+
+        const deltaTimeElement = this.deltaTimeElement;
+        if (!deltaTimeElement) {
+            this.deltaTimeElement = document.getElementById('deltaTime');
+        }
+
+        if (deltaTimeElement) {
+            deltaTimeElement.innerText = ~~(deltaTime * 1000);
+        }
     }
 }

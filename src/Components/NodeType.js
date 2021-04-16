@@ -8,10 +8,11 @@ export class NodeType extends Component {
     static EXPLORING = 4;
     static EXPLORED = 5;
     static PATH = 6;
+    
+    _id = NodeType.FREE;
 
     constructor(entityId) {
         super(entityId);
-        this._id = NodeType.FREE;
     }
 
     get id() {

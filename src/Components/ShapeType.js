@@ -1,6 +1,4 @@
-import { Component } from '../Component.js';
-
-export class ShapeType extends Component {
+export class ShapeType {
     static BOX = 0;
     static CIRCLE = 0;
 }

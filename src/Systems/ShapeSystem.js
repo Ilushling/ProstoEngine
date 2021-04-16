@@ -69,26 +69,26 @@ export class ShapeSystem extends System {
 
     static getColor(nodeTypeId, isPointerCollided) {
         if (isPointerCollided) {
-            return '#d3d3d3';
+            return '#E0E0E0';
         }
 
         switch (nodeTypeId) {
             case NodeType.FREE:
-                return '#ffffff';
+                return '#FAFAFA';
             case NodeType.WALL:
-                return '#464646';
+                return '#BDBDBD';
             case NodeType.START:
-                return '#00ff00';
+                return '#62DA97';
             case NodeType.END:
-                return '#ff0000';
+                return '#F93E58';
             case NodeType.EXPLORING:
-                return '#faf064';
+                return '#FFF59D';
             case NodeType.EXPLORED:
-                return '#a0e6ff';
+                return '#B3E5FC';
             case NodeType.PATH:
-                return '#28b4fa';
+                return '#4FC3F7';
             default:
-                return '#ffffff';
+                return '#FAFAFA';
         }
     }
 }
