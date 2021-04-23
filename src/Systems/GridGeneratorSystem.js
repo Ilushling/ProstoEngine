@@ -22,7 +22,7 @@ export class GridGeneratorSystem extends System {
         this.defaults = {
             width: 500,
             height: 500,
-            cellSize: 20,
+            cellSize: 30,
             margin: 1
         };
 
@@ -71,19 +71,19 @@ export class GridGeneratorSystem extends System {
         const nodesMatrix = [];
 
         const step = cellSize + margin;
-        const xStepsCount = Math.max(height / step - 1, 0);
-        const yStepsCount = Math.max(width / step - 1, 0);
-        if (!xStepsCount || !yStepsCount) {
+        const countInRow = Math.max(Math.ceil(width / step - 1), 0);
+        const countInColumn = Math.max(Math.ceil(height / step - 1), 0);
+        if (!countInRow || !countInColumn) {
             return console.log('cellSize bigger than screen');
         }
-        if (xStepsCount + yStepsCount < 2) {
+        if (countInRow + countInColumn < 2) {
             return console.log('stepCount less than 2');
         }
 
         const entityIds = [];
-        for (let y = 0; y < xStepsCount; y++) {
+        for (let y = 0; y < countInColumn; y++) {
             nodesMatrix[y] = [];
-            for (let x = 0; x < yStepsCount; x++) {
+            for (let x = 0; x < countInRow; x++) {
                 const entity = this.world.createEntity()
                     .addComponent(Generated)
                     .addComponent(Renderable)
@@ -195,7 +195,7 @@ export class GridGeneratorSystem extends System {
             });
         });
 
-        this.eventDispatcher.dispatchEvent('onGridGenerate', { cellSize, margin, generatedEntitiesCount });
+        this.eventDispatcher.dispatchEvent('onGridGenerate', { cellSize, margin, generatedEntitiesCount, countInRow, countInColumn });
     }
 
     static getRandomInteger(min, max) {

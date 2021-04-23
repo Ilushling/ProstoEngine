@@ -18,10 +18,12 @@ export class ColliderSystem extends System {
         this.isEnableHoverCollider = true;
         this.defaults = {
             cellSize: 20,
-            workersCount: 4
+            margin: 1,
+            workersCount: 8
         };
         // Need subtract from original value for more accuracy interpolation
-        this.cellSize = Math.ceil(this.defaults.cellSize - (this.defaults.cellSize / 4)) || this.defaults.cellSize;
+        this.cellSize = this.defaults.cellSize;
+        this.margin = this.defaults.margin;
         this.workersCount = this.workersCount ?? this.defaults.workersCount;
 
         this.isWorkerEntityUpdate = true;
@@ -37,11 +39,12 @@ export class ColliderSystem extends System {
     }
 
     initListeners() {
-        this.eventDispatcher.addEventListener('onGridGenerate', ({ cellSize }) => {
+        this.eventDispatcher.addEventListener('onGridGenerate', ({ cellSize, margin, countInRow, countInColumn }) => {
             // Need subtract from original value for more accuracy interpolation
-            this.cellSize = Math.ceil(cellSize - (cellSize / 4)) 
-                || Math.ceil(this.defaults.cellSize - (this.defaults.cellSize / 4)) 
-                || this.defaults.cellSize;
+            this.cellSize = Math.ceil(cellSize) || this.defaults.cellSize;
+            this.margin = Math.ceil(margin) || this.defaults.margin;
+            this.countInRow = countInRow;
+            this.countInColumn = countInColumn;
         });
         this.eventDispatcher.addEventListener('UIWorkersCountOnChange', workersCount => {
             this.workersCount = Math.abs(+workersCount) ?? this.defaults.workersCount;
@@ -103,6 +106,7 @@ export class ColliderSystem extends System {
     initWorkers() {
         if (Array.isArray(this.workers)) {
             this.terminateWorkers(this.workers);
+            this.isWorkerEntityUpdate = true;
         }
         this.workers = [];
 
@@ -114,13 +118,14 @@ export class ColliderSystem extends System {
             const worker = new Worker('src/Systems/ColliderSystemWorker.js', { type: 'module' });
             this.workers.push(worker);
 
-            const columns = 2; // Columns from ColliderSystemWorker
+            const columns = 1; // Columns from ColliderSystemWorker
             worker.onmessage = event => {
                 const entitiesTypedArray = new Uint32Array(event.data);
                 for (let j = entitiesTypedArray.length - columns; j >= 0; j -= columns) {
                     const entityOffset = j;
                     const entityId = entitiesTypedArray[entityOffset];
-                    const isCollide = entitiesTypedArray[entityOffset + 1];
+                    //const isCollide = entitiesTypedArray[entityOffset + 1];
+                    const isCollide = true;
 
                     const entity = this.entityManager.getEntityById(entityId);
                     if (!entity || !entity.hasComponent(Collider)) {
@@ -181,7 +186,28 @@ export class ColliderSystem extends System {
             let entitiesToCheckCollide = [];
             let interpolatedPointPositions = [];
             if (this.workersCount) {
-                entitiesToCheckCollide = this.workersHandle(this.workers, this._entities, point, isInterpolate, this.cellSize);
+                if (this.isWorkerEntityUpdate) {
+                    // Prepare entities for check collision in worker
+                    const entitiesToHandle = this.prepareEntities(this._entities);
+                    this.entitiesToCheckCollideInWorker = entitiesToHandle.entitiesToCheckCollideInWorker;
+                    this.entitiesToCheckCollide = entitiesToHandle.entitiesToCheckCollide;
+                    this.entitiesTypedArray = entitiesToHandle.entitiesTypedArray;
+                    this.workerEntityColumns = entitiesToHandle.workerEntityColumns;
+                }
+
+                entitiesToCheckCollide = this.entitiesToCheckCollide;
+                this.workersHandle(
+                    this.workers, 
+                    this.entitiesTypedArray, 
+                    point, 
+                    isInterpolate, 
+                    this.workerEntityColumns, 
+                    this.cellSize, 
+                    this.margin, 
+                    this.countInRow, 
+                    this.countInColumn, 
+                    this.isWorkerEntityUpdate
+                );
             } else {
                 entitiesToCheckCollide = this._entities;
             }
@@ -235,6 +261,10 @@ export class ColliderSystem extends System {
                 }
             });
 
+            if (this.isWorkerEntityUpdate) {
+                this.isWorkerEntityUpdate = false;
+            }
+
             if (!this.workersCount) {
                 return this.resolveSystemPromise();
             }
@@ -246,21 +276,24 @@ export class ColliderSystem extends System {
     }
 
     static interpolatePointPositions(point, accuracyDivider) {
-        const interpolatedPointPositions = [];
+        if (point.x < 0 || point.y < 0) {
+            return [];
+        }
     
         const distance = {
             x: Math.abs(point.previous.x - point.x),
             y: Math.abs(point.previous.y - point.y)
         };
     
-        const interpolateSteps = point.x == -1 || point.y == -1 ? 0 : ~~((distance.x + distance.y) / accuracyDivider); // ~~ is faster analog Math.floor
+        const interpolateSteps = ~~((distance.x + distance.y) / accuracyDivider); // ~~ is faster analog Math.floor
+        const interpolatedPointPositions = new Array(interpolateSteps);
         
         for (let i = interpolateSteps; i--;) {
-            const step = i / interpolateSteps;
-            interpolatedPointPositions.push({
+            const step = i / (interpolateSteps);
+            interpolatedPointPositions[i] = {
                 x: ColliderSystem.lerp(point.previous.x, point.x, step),
                 y: ColliderSystem.lerp(point.previous.y, point.y, step)
-            });
+            };
         }
     
         return interpolatedPointPositions;
@@ -315,51 +348,59 @@ export class ColliderSystem extends System {
     }
 
     static rectContains(rect, point) {
-        return (point.x > rect.x && point.x < rect.widthX) && 
-               (point.y > rect.y && point.y < rect.heightY);
+        return (point.x >= rect.x && point.x <= rect.widthX) && 
+               (point.y >= rect.y && point.y <= rect.heightY);
     }
 
-    workersHandle(workers, entities, point, isInterpolate, cellSize) {
-        // Columns to ColliderSystemWorker (in entitiesToCheckCollideInWorker)
-        const columns = 5;
+    prepareEntities(entities) {
         // Prepare entities for check collision in worker
-        if (this.isWorkerEntityUpdate) {
-            this.entitiesToCheckCollideInWorker = [];
-            this.entitiesToCheckCollide = [];
-            entities.forEach(entity => {
-                if (!entity.hasComponent(Collider)) {
-                    return;
-                }
+        // Columns to ColliderSystemWorker (in entitiesToCheckCollideInWorker)
+        const workerEntityColumns = 5;
+        const entitiesToCheckCollideInWorker = [];
+        const entitiesToCheckCollide = [];
+        entities.forEach(entity => {
+            if (!entity.hasComponent(Collider)) {
+                return;
+            }
 
-                const collider = entity.getComponent(Collider);
+            const collider = entity.getComponent(Collider);
 
-                // Fast check collision in Web Worker
-                if (collider.primitive == ColliderType.BOX) {
-                    // 5 columns
-                    const rect = collider.rect;
-                    this.entitiesToCheckCollideInWorker.push(
-                        entity.id,
-                        rect.x, 
-                        rect.y, 
-                        rect.widthX, 
-                        rect.heightY
-                    );
+            // Fast check collision in Web Worker
+            if (collider.primitive == ColliderType.BOX) {
+                // 5 columns
+                const rect = collider.rect;
+                entitiesToCheckCollideInWorker.push(
+                    entity.id,
+                    rect.x, 
+                    rect.y, 
+                    rect.widthX, 
+                    rect.heightY
+                );
 
-                    return;
-                }
+                return;
+            }
 
-                // For check collisions not in Web Worker
-                this.entitiesToCheckCollide.push(entity);
-            });
-        }
+            // For check collisions not in Web Worker
+            entitiesToCheckCollide.push(entity);
+        });
 
+        const entitiesTypedArray = new Uint32Array(entitiesToCheckCollideInWorker);
+
+        return {
+            entitiesToCheckCollideInWorker,
+            entitiesToCheckCollide,
+            entitiesTypedArray,
+            workerEntityColumns
+        };
+    }
+
+    workersHandle(workers, entitiesTypedArray, point, isInterpolate, columns, cellSize, margin, countInRow, countInColumn, isWorkerEntityUpdate) {
         const workersCount = workers.length;
-        const entitiesCount = this.entitiesToCheckCollideInWorker.length;
-        const remain = entitiesCount / workersCount % columns;
-        const entitiesToWorkerCount = entitiesCount / workersCount - remain;
-        if (this.isWorkerEntityUpdate) {
-            this.entitiesTypedArray = new Uint32Array(this.entitiesToCheckCollideInWorker);
-        }
+        const entitiesTypedArrayLength = entitiesTypedArray.length;
+        const remain = entitiesTypedArrayLength / workersCount % columns;
+        const remainForLast = Math.round(remain * workersCount); // Math.round prevents 3.333333...333286 cases
+        const entitiesToWorkerCount = entitiesTypedArrayLength / workersCount - remain;
+
         for (let i = workersCount; i--;) {
             const worker = workers[i];
             if (!worker) {
@@ -367,22 +408,40 @@ export class ColliderSystem extends System {
             }
 
             const start = entitiesToWorkerCount * i;
-            const limit = start + entitiesToWorkerCount + (i == workersCount - 1 ? remain * workersCount : 0);
+            const limit = start + entitiesToWorkerCount + (i == workersCount - 1 ? remainForLast : 0);
 
-            const entitiesBuffer = this.entitiesTypedArray.slice(start, limit).buffer;
-
-            worker.postMessage({
-                point,
-                isInterpolate,
-                workerI: i,
-                cellSize,
-                columns,
-                entitiesBuffer
-            }, [entitiesBuffer]);
+            if (isWorkerEntityUpdate) {
+                const entitiesBuffer = entitiesTypedArray.slice(start, limit).buffer;
+    
+                worker.postMessage({
+                    workerI: i,
+                    workersCount,
+                    countInRow, 
+                    countInColumn,
+                    start,
+                    point,
+                    isInterpolate,
+                    cellSize,
+                    margin,
+                    columns,
+                    entitiesBuffer,
+                    isWorkerEntityUpdate
+                }, [entitiesBuffer]);
+            } else {
+                worker.postMessage({
+                    workerI: i,
+                    workersCount,
+                    countInRow, 
+                    countInColumn,
+                    start,
+                    point,
+                    isInterpolate,
+                    cellSize,
+                    margin,
+                    columns,
+                    isWorkerEntityUpdate
+                });
+            }
         }
-
-        this.isWorkerEntityUpdate = false;
-
-        return this.entitiesToCheckCollide;
     }
 }

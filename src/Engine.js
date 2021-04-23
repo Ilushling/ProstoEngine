@@ -60,7 +60,9 @@ export class Engine {
 
         this.log(this.handleTime, this.deltaTime);
 
-        this.requestAnimationFrameID = requestAnimationFrame(newTimeStamp => this.loop(newTimeStamp));
+        //setTimeout(() => {
+            this.requestAnimationFrameID = requestAnimationFrame(newTimeStamp => this.loop(newTimeStamp));
+        //}, 280);
     }
 
     init() {
