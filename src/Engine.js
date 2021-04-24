@@ -17,12 +17,20 @@ import { ColliderSystem } from './Systems/ColliderSystem.js';
 import { ShapeSystem } from './Systems/ShapeSystem.js';
 import { PathFinderSystem } from './Systems/PathFinderSystem.js';
 
+import { Chart } from '../vendor/ilushling/ChartJS/src/Chart.js';
+
 export class Engine {
     constructor() {
         this.deltaTime = 0;
         this.lastTimeStamp = 0;
         this.handleTime = 0;
         this.logs = [];
+        this.chart = new Chart({
+            el: document.getElementById('canvas-chart'),
+            data: this.logs,
+            step: 1,
+            height: 150
+        });
 
         this.world = new World(this);
 
@@ -79,13 +87,16 @@ export class Engine {
     }
 
     logUpdate(handleTime, deltaTime) {
+        const handleTimeMS = ~~(handleTime * 1000);
+        const deltaTimeMS = ~~(deltaTime * 1000);
+
         const handleTimeElement = this.handleTimeElement;
         if (!handleTimeElement) {
             this.handleTimeElement = document.getElementById('handleTime');
         }
 
         if (handleTimeElement) {
-            handleTimeElement.innerText = ~~(handleTime * 1000);
+            handleTimeElement.innerText = handleTimeMS;
         }
 
         const deltaTimeElement = this.deltaTimeElement;
@@ -94,7 +105,11 @@ export class Engine {
         }
 
         if (deltaTimeElement) {
-            deltaTimeElement.innerText = ~~(deltaTime * 1000);
+            deltaTimeElement.innerText = deltaTimeMS;
         }
+
+        this.chart.add({
+            value: handleTimeMS
+        });
     }
 }

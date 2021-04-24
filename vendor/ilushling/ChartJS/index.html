@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chart</title>
+    <script src="src/Chart.js"></script>
+</head>
+<body style="background: #121212; margin: 0;">
+    <div id="wrapper">
+        <canvas id="line-chart" style="display: block;"></canvas>
+    </div>
+</body>
+<script>
+    let data = [
+        {
+            value: 5
+        },
+        {
+            value: 2
+        },
+        {
+            value: 3
+        },
+        {
+            value: 6
+        },
+        {
+            value: 5
+        },
+        {
+            value: 1
+        },
+        {
+            value: 3
+        }
+    ];
+
+    const chart = new Chart({
+        el: document.getElementById('line-chart'),
+        type: 'line',
+        data
+    });
+    window.chart = chart;
+
+    startTest();
+    //stopTest();
+
+    function startTest() {
+        let value = 0;
+        window.testIntervalId = setInterval(() => {
+            if (value < Math.random() * 1000) {
+                value += Math.random() * 50;
+            } else {
+                value -= Math.random() * 50;
+            }
+            chart.add({ value });
+        }, 1);
+    }
+
+    function stopTest() {
+        clearInterval(window.testIntervalId);
+    }
+</script>
+</html>
