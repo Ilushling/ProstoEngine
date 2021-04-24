@@ -105,9 +105,10 @@ export class Chart {
         ctx.stroke();
 
         ctx.fillStyle = this.strokeStyle;
-        ctx.font = "28px sans-serif";
-        ctx.fillText(~~this.min, 5, height - Chart.getPercent(this.min, this.min, heightToTop) + 7);
-        ctx.fillText(~~this.max, 5, height - Chart.getPercent(this.max, this.min, heightToTop) + 14);
+        ctx.font = '28px sans-serif';
+        ctx.textBaseline = 'top';
+        ctx.fillText(~~this.min, 5, height - 28 - Chart.getPercent(this.min, this.min, heightToTop));
+        ctx.fillText(~~this.max, 5, height - Chart.getPercent(this.max, this.min, heightToTop));
     }
 
     add(item) {
