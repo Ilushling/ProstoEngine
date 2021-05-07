@@ -82,7 +82,7 @@ export class Chart {
         const heightMarginBottom = 1 - heightMargin;
 
         const width = ctx.canvas.width;
-        const height = ctx.canvas.height * heightMarginBottom;
+        const height = ~~(ctx.canvas.height * heightMarginBottom);
 
         let xOffset = width;
 
@@ -92,7 +92,7 @@ export class Chart {
 
             const position = {
                 x: xOffset, 
-                y: height - Chart.getPercent(item.value, this.min, heightToTop)
+                y: ~~(height - Chart.getPercent(item.value, this.min, heightToTop))
             };
 
             ctx.lineTo(position.x, position.y);
@@ -107,8 +107,8 @@ export class Chart {
         ctx.fillStyle = this.strokeStyle;
         ctx.font = '28px sans-serif';
         ctx.textBaseline = 'top';
-        ctx.fillText(~~this.min, 5, height - 28 - Chart.getPercent(this.min, this.min, heightToTop));
-        ctx.fillText(~~this.max, 5, height - Chart.getPercent(this.max, this.min, heightToTop));
+        ctx.fillText(~~this.min, 5, height - 28 - ~~Chart.getPercent(this.min, this.min, heightToTop));
+        ctx.fillText(~~this.max, 5, height - ~~Chart.getPercent(this.max, this.min, heightToTop));
     }
 
     add(item) {
@@ -161,6 +161,6 @@ export class Chart {
     }
 
     static getPercent(value, min, factor) {
-        return (value - min) / factor;
+        return ((value - min) / factor) || 0;
     }
 }
