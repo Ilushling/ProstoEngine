@@ -109,7 +109,7 @@ export class Engine {
         }
 
         this.chart.add({
-            value: handleTimeMS
+            value: deltaTimeMS
         });
     }
 }
