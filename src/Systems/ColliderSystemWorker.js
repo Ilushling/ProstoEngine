@@ -12,7 +12,7 @@ addEventListener('message', event => {
     }
 
     if (isInterpolate) {
-        var interpolatedPointPositions = interpolatePointPositions(point, cellSize - (cellSize / 4));
+        var interpolatedPointPositions = interpolatePointPositions(point, cellSize);
     }
     
     const entitiesTypedArrayResult = [];

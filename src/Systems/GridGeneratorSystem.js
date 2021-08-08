@@ -71,8 +71,8 @@ export class GridGeneratorSystem extends System {
         const nodesMatrix = [];
 
         const step = cellSize + margin;
-        const countInRow = Math.max(Math.ceil(width / step - 1), 0);
-        const countInColumn = Math.max(Math.ceil(height / step - 1), 0);
+        const countInRow = Math.max(Math.ceil(width / step - 1 /* 1 block from right border */), 0);
+        const countInColumn = Math.max(Math.ceil(height / step - 1 /* 1 block from bottom border */), 0);
         if (!countInRow || !countInColumn) {
             return console.log('cellSize bigger than screen');
         }
@@ -118,8 +118,8 @@ export class GridGeneratorSystem extends System {
                 collider.rect = {
                     x: position.x,
                     y: position.y,
-                    width: scale.x,
-                    height: scale.y,
+                    width: scale.x + margin,
+                    height: scale.y + margin,
                 };
 
                 nodeType.id = NodeType.FREE;
