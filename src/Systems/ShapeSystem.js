@@ -56,7 +56,7 @@ export class ShapeSystem extends System {
                     }
                 }
 
-                if (this.world.inputManager.pointer.leftButton.pressed && [NodeType.FREE, NodeType.WALL].includes(nodeType.id)) {
+                if (this.world.inputManager.pointer.leftButton.pressed && (nodeType.id == NodeType.FREE || nodeType.id == NodeType.WALL)) {
                     nodeType.id = this.nodeTypePointerMode;
                 }
             }

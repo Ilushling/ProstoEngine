@@ -25,6 +25,6 @@ export class NodeType extends Component {
     }
 
     static isWalkable(nodeTypeId) {
-        return [NodeType.FREE, NodeType.EXPLORING, NodeType.END].includes(nodeTypeId);
+        return nodeTypeId == NodeType.FREE || nodeTypeId == NodeType.EXPLORING || nodeTypeId == NodeType.END;
     }
 }
