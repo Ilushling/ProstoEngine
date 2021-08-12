@@ -9,7 +9,7 @@ export class ComponentManager {
     }
 
     registerComponent(Component) {
-        if (Component._typeId != undefined) {
+        if (Component._typeId != null) {
             console.log('Component already registered', Component);
             return;
         }

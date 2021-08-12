@@ -17,7 +17,7 @@ export class ColliderSystem extends System {
 
         this.isEnableHoverCollider = true;
         this.defaults = {
-            cellSize: 20,
+            cellSize: 10,
             margin: 1,
             workersCount: 8
         };

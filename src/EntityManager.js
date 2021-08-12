@@ -16,7 +16,7 @@ export class EntityManager {
     createEntity(name) {
         const entity = new Entity(this);
 
-        if (name != undefined) {
+        if (name != null) {
             if (this._entitiesByName.has(name)) {
                 throw new Error(`Entity name ${name} already exists`);
             }
@@ -54,7 +54,7 @@ export class EntityManager {
     }
 
     entityAddComponent(entity, Component, data) {
-        if (Component._typeId == undefined) {
+        if (Component._typeId == null) {
             throw new Error('Component not registered');
         }
         entity._ComponentsTypes.push(Component);

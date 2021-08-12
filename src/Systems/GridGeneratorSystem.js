@@ -22,7 +22,7 @@ export class GridGeneratorSystem extends System {
         this.defaults = {
             width: 500,
             height: 500,
-            cellSize: 30,
+            cellSize: 10,
             margin: 1
         };
 
@@ -68,7 +68,6 @@ export class GridGeneratorSystem extends System {
 
     generate(width, height, cellSize, margin) {
         const baseWeight = 1;
-        const nodesMatrix = [];
 
         const step = cellSize + margin;
         const countInRow = Math.max(Math.ceil(width / step - 1 /* 1 block from right border */), 0);
@@ -80,9 +79,10 @@ export class GridGeneratorSystem extends System {
             return console.log('stepCount less than 2');
         }
 
-        const entityIds = [];
+        const nodesMatrix = Array.from(Array(countInColumn), () => []);
+        const entityIds = new Map();
         for (let y = 0; y < countInColumn; y++) {
-            nodesMatrix[y] = [];
+            const entityIdI = y * countInRow;
             for (let x = 0; x < countInRow; x++) {
                 const entity = this.world.createEntity()
                     .addComponent(Generated)
@@ -126,21 +126,21 @@ export class GridGeneratorSystem extends System {
 
                 nodesMatrix[y][x] = entity;
 
-                entityIds.push(entity.id);
+                entityIds.set(entityIdI + x, entity.id);
             }
         }
 
         // Start End Nodes
-        const generatedEntitiesCount = entityIds.length;
-        const startEntityIdsId = GridGeneratorSystem.getRandomInteger(0, generatedEntitiesCount);
-        let endEntityIdsId = GridGeneratorSystem.getRandomInteger(0, generatedEntitiesCount);
-        while (endEntityIdsId == startEntityIdsId) {
-            endEntityIdsId = GridGeneratorSystem.getRandomInteger(0, generatedEntitiesCount);
+        const generatedEntitiesCount = entityIds.size;
+        const startEntityId = GridGeneratorSystem.getRandomInteger(0, generatedEntitiesCount);
+        let endEntityId = GridGeneratorSystem.getRandomInteger(0, generatedEntitiesCount);
+        while (endEntityId == startEntityId) {
+            endEntityId = GridGeneratorSystem.getRandomInteger(0, generatedEntitiesCount);
         }
 
-        const startEntity = this.world.entityManager.getEntityById(entityIds[startEntityIdsId]);
+        const startEntity = this.world.entityManager.getEntityById(entityIds.get(startEntityId));
         startEntity.getComponent(NodeType).id = NodeType.START;
-        const endEntity = this.world.entityManager.getEntityById(entityIds[endEntityIdsId]);
+        const endEntity = this.world.entityManager.getEntityById(entityIds.get(endEntityId));
         endEntity.getComponent(NodeType).id = NodeType.END;
 
         // Node edges
@@ -153,10 +153,10 @@ export class GridGeneratorSystem extends System {
                 const down  = nodesMatrix[y + 1]    ? nodesMatrix[y + 1][x] : undefined;
                 const right = nodesMatrix[y][x + 1];
 
-                const upLeft     = nodesMatrix[y - 1] ? nodesMatrix[y - 1][x - 1] : undefined;
-                const downLeft   = nodesMatrix[y + 1] ? nodesMatrix[y + 1][x - 1] : undefined;
-                const upRight    = nodesMatrix[y - 1] ? nodesMatrix[y - 1][x + 1] : undefined;
-                const downRight  = nodesMatrix[y + 1] ? nodesMatrix[y + 1][x + 1] : undefined;
+                const upLeft    = nodesMatrix[y - 1] ? nodesMatrix[y - 1][x - 1] : undefined;
+                const downLeft  = nodesMatrix[y + 1] ? nodesMatrix[y + 1][x - 1] : undefined;
+                const upRight   = nodesMatrix[y - 1] ? nodesMatrix[y - 1][x + 1] : undefined;
+                const downRight = nodesMatrix[y + 1] ? nodesMatrix[y + 1][x + 1] : undefined;
 
                 if (up) {
                     const upEdge = new Edge({ node: up, weight: baseWeight });
@@ -176,20 +176,21 @@ export class GridGeneratorSystem extends System {
                 }
 
                 // Diagonals
+                const diagonalWeight = baseWeight * 1.4;
                 if (upLeft) {
-                    const upLeftEdge = new Edge({ node: upLeft, weight: baseWeight * 1.4 });
+                    const upLeftEdge = new Edge({ node: upLeft, weight: diagonalWeight });
                     entityEdges.edges.push(upLeftEdge);
                 }
                 if (downLeft) {
-                    const downLeftEdge = new Edge({ node: downLeft, weight: baseWeight * 1.4 });
+                    const downLeftEdge = new Edge({ node: downLeft, weight: diagonalWeight });
                     entityEdges.edges.push(downLeftEdge);
                 }
                 if (upRight) {
-                    const upRightEdge = new Edge({ node: upRight, weight: baseWeight * 1.4 });
+                    const upRightEdge = new Edge({ node: upRight, weight: diagonalWeight });
                     entityEdges.edges.push(upRightEdge);
                 }
                 if (downRight) {
-                    const downRightEdge = new Edge({ node: downRight, weight: baseWeight * 1.4 });
+                    const downRightEdge = new Edge({ node: downRight, weight: diagonalWeight });
                     entityEdges.edges.push(downRightEdge);
                 }
             });

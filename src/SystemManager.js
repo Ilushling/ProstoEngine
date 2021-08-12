@@ -20,7 +20,7 @@ export class SystemManager {
 
     unregisterSystem(System) {
         const system = this.getSystem(System);
-        if (system == undefined) {
+        if (system == null) {
             return this;
         }
     
