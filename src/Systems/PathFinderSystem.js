@@ -3,6 +3,8 @@ import { NodeType } from '../Components/NodeType.js';
 import { Edges } from '../Components/Edges.js';
 import { AStarPathFinder } from '../Components/AStarPathFinder.js';
 import { Position } from '../Components/Position.js';
+import { AVLTree } from '../Trees/AVLTree.js';
+import { BinarySearchTree } from '../Trees/BinarySearchTree.js';
 
 export class PathFinderSystem extends System {
     constructor(world) {
@@ -14,7 +16,8 @@ export class PathFinderSystem extends System {
         this.startNode = undefined;
         this.endNode = undefined;
         // this.exploringEntities = [];
-        this.exploringEntities = new Map();
+        // this.exploringEntities = new Map();
+        this.exploringEntities = new AVLTree(); // O(log n)
 
         this.defaults = {
             baseWeight: 1,
@@ -47,7 +50,9 @@ export class PathFinderSystem extends System {
             this.baseWeight = +baseWeight;
         });
         this.eventDispatcher.addEventListener('onGridGenerate', ({ cellSize, margin }) => {
-            this.searchTickSteps = this.world.entityManager.entitiesCount / 400;
+            this.isEnabled = false;
+
+            this.searchTickSteps = this.world.entityManager.entitiesCount / 200;
             this.searchTickSteps = 1 + (this.searchTickSteps | this.searchTickSteps); // | - is faster than Math.floor analog
             this.buildPathTickSteps = 5;
             this.cellSize = cellSize;
@@ -83,7 +88,8 @@ export class PathFinderSystem extends System {
                 this.startNode = entity;
                 // this.exploringEntities = [this.startNode];
                 this.exploringEntities.clear();
-                this.exploringEntities.set(0, this.startNode);
+                // this.exploringEntities.set(0, this.startNode);
+                this.exploringEntities.insert(0, this.startNode);
             }
             if (nodeType.id == NodeType.END) {
                 this.endNode = entity;
@@ -160,7 +166,7 @@ export class PathFinderSystem extends System {
                 }
                 // this.totalExploreTime = performance.now() - totalExploreTime;
             } else {
-                for (let i = this.searchTickSteps - 1; i--;) {
+                for (let i = this.searchTickSteps; i--;) {
                     // let totalExploreTime = performance.now();
                     this.isFinded = this.searchTick(this.endNodePosition);
                     // this.totalExploreTime += performance.now() - totalExploreTime;
@@ -170,6 +176,8 @@ export class PathFinderSystem extends System {
                     }
                 }
             }
+        } else {
+            this.isEnabled = false;
         }
 
         if (this.isFinded) {
@@ -194,7 +202,7 @@ export class PathFinderSystem extends System {
         const currentEdgesComponent = currentEntity.getComponent(Edges);
         const currentAStarPathFinder = currentEntity.getComponent(AStarPathFinder);
 
-        if (currentNodeType.id == NodeType.EXPLORED) {
+        if (currentNodeType.id === NodeType.EXPLORED) {
             return;
         }
 
@@ -209,7 +217,7 @@ export class PathFinderSystem extends System {
             const aStarPathFinder = edgeEntity.getComponent(AStarPathFinder);
             const position = edgeEntity.getComponent(Position);
 
-            if (nodeType.id != NodeType.FREE && nodeType.id != NodeType.EXPLORING && nodeType.id != NodeType.END) {
+            if (nodeType.id !== NodeType.FREE && nodeType.id !== NodeType.EXPLORING && nodeType.id !== NodeType.END) {
                 return;
             }
 
@@ -218,7 +226,7 @@ export class PathFinderSystem extends System {
             const totalCost = newCost + newHeuristic; // Total cost of the node (f)
 
             if (!aStarPathFinder.cost || !aStarPathFinder.heuristic || totalCost < aStarPathFinder.totalCost) {
-                if (nodeType.id == NodeType.END) {
+                if (nodeType.id === NodeType.END) {
                     isFinded = true;
                 } else {
                     nodeType.id = NodeType.EXPLORING;
@@ -237,9 +245,9 @@ export class PathFinderSystem extends System {
 
         this.totalExploredEntitiesCount++;
 
-        if (currentNodeType.id == NodeType.END) {
+        if (currentNodeType.id === NodeType.END) {
             isFinded = true;
-        } else if (currentNodeType.id != NodeType.START) {
+        } else if (currentNodeType.id !== NodeType.START) {
             currentNodeType.id = NodeType.EXPLORED;
         }
 
@@ -247,61 +255,27 @@ export class PathFinderSystem extends System {
     }
 
     addExploringEntity(entity, totalCost) {
-        const hasExploringEntity = this.exploringEntities.has(totalCost);
-        if (hasExploringEntity) {
-            const exploringEntity = this.exploringEntities.get(totalCost);
-            // totalCost duplicate
-            if (Array.isArray(exploringEntity)) {
-                // is array container
-                exploringEntity.push(entity);
-            } else {
-                // is object
-                this.exploringEntities.set(totalCost, [exploringEntity, entity]);
-            }
-        } else {
-            this.exploringEntities.set(totalCost, entity);
-        }
-
         // this.exploringEntities.push(entity);
+
+        // const hasExploringEntity = this.exploringEntities.has(totalCost);
+        // if (hasExploringEntity) {
+        //     const exploringEntity = this.exploringEntities.get(totalCost);
+        //     // totalCost duplicate
+        //     if (Array.isArray(exploringEntity)) {
+        //         // is array container
+        //         exploringEntity.push(entity);
+        //     } else {
+        //         // is object
+        //         this.exploringEntities.set(totalCost, [exploringEntity, entity]);
+        //     }
+        // } else {
+        //     this.exploringEntities.set(totalCost, entity);
+        // }
+
+        this.exploringEntities.insert(totalCost, entity);
     }
 
     getBestExploringEntity() {
-        let arrayContainerKey;
-        let bestTotalCost;
-        this.exploringEntities.forEach((exploringEntity, exploringEntityKey) => {
-            if (Array.isArray(exploringEntity)) {
-                if (!exploringEntity.length) {
-                    return this.exploringEntities.delete(exploringEntityKey);
-                }
-                // is array container
-                return exploringEntity.forEach((exploringEntityOne, exploringEntityOneKey) => {
-                    const exploringEntityTotalCost = exploringEntityOne.getComponent(AStarPathFinder).totalCost;
-                    if (bestTotalCost == null || exploringEntityTotalCost < bestTotalCost) {
-                        bestTotalCost = exploringEntityKey;
-                        arrayContainerKey = exploringEntityOneKey;
-                    }
-                });
-            }
-
-            // is object
-            if (bestTotalCost == null || exploringEntityKey < bestTotalCost) {
-                bestTotalCost = exploringEntityKey;
-                arrayContainerKey = null;
-            }
-        });
-
-        let currentEntity;
-        if (arrayContainerKey == null) {
-            currentEntity = this.exploringEntities.get(bestTotalCost);
-            this.exploringEntities.delete(bestTotalCost);
-        } else {
-            const currentEntityContainer = this.exploringEntities.get(bestTotalCost);
-            currentEntity = currentEntityContainer[arrayContainerKey];
-            currentEntityContainer.splice(arrayContainerKey, 1);
-        }
-
-        return currentEntity;
-
         // slow
         // this.exploringEntities.sort((aEntity, bEntity) => {
         //     const aEntityAStarPathFinder = aEntity.getComponent(AStarPathFinder);
@@ -311,6 +285,45 @@ export class PathFinderSystem extends System {
         // });
         // const currentEntity = this.exploringEntities.pop();
         // return currentEntity
+
+        // let arrayContainerKey;
+        // let bestTotalCost;
+        // this.exploringEntities.forEach((exploringEntity, exploringEntityKey) => {
+        //     if (Array.isArray(exploringEntity)) {
+        //         if (!exploringEntity.length) {
+        //             return this.exploringEntities.delete(exploringEntityKey);
+        //         }
+        //         // is array container
+        //         return exploringEntity.forEach((exploringEntityOne, exploringEntityOneKey) => {
+        //             const exploringEntityTotalCost = exploringEntityOne.getComponent(AStarPathFinder).totalCost;
+        //             if (bestTotalCost == null || exploringEntityTotalCost < bestTotalCost) {
+        //                 bestTotalCost = exploringEntityKey;
+        //                 arrayContainerKey = exploringEntityOneKey;
+        //             }
+        //         });
+        //     }
+
+        //     // is object
+        //     if (bestTotalCost == null || exploringEntityKey < bestTotalCost) {
+        //         bestTotalCost = exploringEntityKey;
+        //         arrayContainerKey = null;
+        //     }
+        // });
+
+        // let currentEntity;
+        // if (arrayContainerKey == null) {
+        //     currentEntity = this.exploringEntities.get(bestTotalCost);
+        //     this.exploringEntities.delete(bestTotalCost);
+        // } else {
+        //     const currentEntityContainer = this.exploringEntities.get(bestTotalCost);
+        //     currentEntity = currentEntityContainer[arrayContainerKey];
+        //     currentEntityContainer.splice(arrayContainerKey, 1);
+        // }
+
+        const min = this.exploringEntities.removeMin();
+        if (min) {
+            return min.value;
+        }
     }
 
     /**

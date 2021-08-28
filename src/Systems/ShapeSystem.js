@@ -69,14 +69,14 @@ export class ShapeSystem extends System {
 
     static getColor(nodeTypeId, isPointerCollided) {
         if (isPointerCollided) {
-            return '#E0E0E0';
+            return '#555555'; // E0E0E0
         }
 
         switch (nodeTypeId) {
             case NodeType.FREE:
-                return '#FAFAFA';
+                return '#333333'; // FAFAFA
             case NodeType.WALL:
-                return '#BDBDBD';
+                return '#131313'; // BDBDBD
             case NodeType.START:
                 return '#62DA97';
             case NodeType.END:

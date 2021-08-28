@@ -26,7 +26,7 @@
                 <input id="UIWorkersCount" class="ui-input" type="number" value="8"/>
 
                 <span>cellSize:</span>
-                <input id="UICellSize" class="ui-input ui-cell-size" value="30" type="number" />
+                <input id="UICellSize" class="ui-input ui-cell-size" value="10" type="number" />
 
                 <span>entitiesCount:</span>
                 <span id="entitiesCount" class="ui-input">0</span>
@@ -63,7 +63,9 @@
 
     document.getElementById('UIGenerateButton').onclick        = event => eventDispatcher.dispatchEvent('UIGenerateButtonOnClick');
 
-    eventDispatcher.addEventListener('onGridGenerate', ({ generatedEntitiesCount }) => document.getElementById('entitiesCount').innerHTML = generatedEntitiesCount);
+    eventDispatcher.addEventListener('onGridGenerate', ({generatedEntitiesCount}) => {
+        document.getElementById('entitiesCount').innerHTML = generatedEntitiesCount;
+    });
 </script>
 
 </html>

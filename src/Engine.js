@@ -24,10 +24,9 @@ export class Engine {
         this.deltaTime = 0;
         this.lastTimeStamp = 0;
         this.handleTime = 0;
-        this.logs = [];
         this.chart = new Chart({
             el: document.getElementById('canvas-chart'),
-            data: this.logs,
+            data: [],
             step: 1,
             height: 150
         });
@@ -78,11 +77,6 @@ export class Engine {
     }
 
     log(handleTime, deltaTime) {
-        //this.logs.push({
-        //    handleTime,
-        //    deltaTime
-        //});
-
         this.logUpdate(handleTime, deltaTime);
     }
 
